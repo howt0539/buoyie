@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自由潛水分配 v12.0 (人數控管版)</title>
+    <title>自由潛水分配 v13.0</title>
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -163,14 +163,32 @@
         .btn-move-pool { grid-column: 1 / -1; background-color: #fff3e0; border-color: #ffb74d; color: #e65100; }
         .btn-move-buoy { background-color: #f8f9fa; }
 
+        /* 待分配區樣式確保保留 */
+        #unassigned-area {
+            display: block; /* 確保顯示 */
+            background: #fff3e0; 
+            border: 2px dashed #ffb74d; 
+            margin-bottom: 20px;
+            padding: 15px; 
+            border-radius: 12px;
+            min-height: 80px; /* 增加最小高度確保有存在感 */
+        }
+        #unassigned-area .diver-list { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+            padding: 0; 
+            min-height: 60px; /* 列表區域也給高度 */
+        }
+
     </style>
 </head>
 <body>
 
-    <h1>自由潛水分配 v12.0</h1>
+    <h1>自由潛水分配 v13.0</h1>
 
     <div class="controls">
-        <button class="btn-manage" type="button" onclick="openManager()">⚙️ 編輯</button>
+        <button class="btn-manage" type="button" onclick="openManager()">⚙️ 編輯人員</button>
         <div class="control-group">
             <label>模式:</label>
             <select id="assignLogic" class="logic-select">
@@ -297,85 +315,61 @@
         };
 
         function loadDivers() {
-            const saved = localStorage.getItem('freediving_divers_v12'); // update key
+            const saved = localStorage.getItem('freediving_divers_v12'); 
             divers = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultDivers));
         }
         function saveDivers() { localStorage.setItem('freediving_divers_v12', JSON.stringify(divers)); }
 
-        // --- 分配核心邏輯 (v12 人數控管更新) ---
+        // --- 分配核心邏輯 ---
         function autoAssign() {
             const pool = document.getElementById('pool');
             const buoys = document.querySelectorAll('.buoy-list');
             
-            // 1. 回收所有人到 Pool
             buoys.forEach(list => { while(list.firstChild) pool.appendChild(list.firstChild); });
-            
-            // 2. 獲取所有卡片並重置狀態
             let allCards = Array.from(pool.children);
             allCards.forEach(card => card.dataset.manualLeader = "false");
 
-            // 3. 取得設定
             const logic = document.getElementById('assignLogic').value;
             const buoyCount = parseInt(document.getElementById('buoyCount').value);
             const maxCapacity = parseInt(document.getElementById('maxCapacity').value);
 
-            // 4. 排序
             if (logic === 'random') {
                 for (let i = allCards.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [allCards[i], allCards[j]] = [allCards[j], allCards[i]];
                 }
             } else {
-                // 能力與平均分配都先依等級高->低排
                 allCards.sort((a, b) => parseInt(b.dataset.rank) - parseInt(a.dataset.rank));
             }
-            
-            // 5. 確保 Pool 內的順序也跟著變 (視覺上比較整齊)
             allCards.forEach(card => pool.appendChild(card));
 
-            // 6. 分配邏輯 (嚴格遵守 maxCapacity)
             if (logic === 'group') {
-                // 能力分組：填滿第1球，再填第2球... (填不下就去下一球，全滿就留 Pool)
                 let currentBuoyIndex = 1;
                 allCards.forEach(card => {
                     let list = document.getElementById(`buoy-list-${currentBuoyIndex}`);
-                    
-                    // 如果當前這球滿了，找下一顆
                     while (list && list.children.length >= maxCapacity && currentBuoyIndex < buoyCount) {
                         currentBuoyIndex++;
                         list = document.getElementById(`buoy-list-${currentBuoyIndex}`);
                     }
-                    
-                    // 如果找到了且沒滿，放進去；否則不動 (留在 Pool)
                     if(list && list.children.length < maxCapacity) {
                         list.appendChild(card);
                     }
                 });
-
             } else {
-                // 平均分配 (Balance) 或 隨機 (Random) - 採用 Round Robin 發牌
-                // 如果目標球滿了，嘗試找下一顆空的，若全滿則留 Pool
-                
                 allCards.forEach((card, index) => {
                     let placed = false;
-                    let startNode = (index % buoyCount) + 1; // 預計要去哪顆球
-                    
-                    // 嘗試 buoyCount 次，看看有沒有空位
+                    let startNode = (index % buoyCount) + 1;
                     for (let i = 0; i < buoyCount; i++) {
-                        // 計算實際目標 (若遇到滿的就往後推)
                         let targetBuoy = ((startNode + i - 1) % buoyCount) + 1;
                         let list = document.getElementById(`buoy-list-${targetBuoy}`);
-
                         if (list && list.children.length < maxCapacity) {
                             list.appendChild(card);
                             placed = true;
-                            break; // 成功放入，跳出迴圈處理下一張卡
+                            break;
                         }
                     }
-                    // 若迴圈跑完 placed 還是 false，代表全滿，卡片自動留在 Pool
                 });
             }
-
             updateAllStats();
         }
 
