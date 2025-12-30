@@ -1,9 +1,25 @@
+這是一個非常關鍵的邏輯優化，能避免浮球「爆滿」導致安全疑慮。
+
+這是為您量身打造的 **v12.0 最終完美版**。
+
+### v12.0 更新重點：
+
+1. **預設邏輯變更**：一打開網頁，分配模式預設就是 **「⚖️ 平均分配」**。
+2. **嚴格人數控管**：
+* 無論選擇哪種邏輯（分組、平均、隨機），系統會嚴格遵守「上限」。
+* **多出來的人**：一旦所有浮球都滿了，剩下的人會**自動留在「待分配區」**，不會硬塞進浮球，也不會消失。
+
+
+
+請使用這份 **v12.0** 完整程式碼：
+
+```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自由潛水分配 v10.0 (讀取還原版)</title>
+    <title>自由潛水分配 v12.0 (人數控管版)</title>
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -73,6 +89,10 @@
             padding: 8px; border-radius: 6px; border: 1px solid var(--border);
             width: 60px; text-align: center; font-size: 16px;
         }
+        select.logic-select {
+            padding: 8px; border-radius: 6px; border: 1px solid var(--border);
+            font-size: 16px; background-color: #fff; cursor: pointer;
+        }
 
         /* 浮球區域 */
         .buoy-container {
@@ -123,15 +143,7 @@
         .mobile-move { display: none; font-size: 0.9em; padding: 5px 10px; background:rgba(0,123,255,0.1); border-radius:4px; color: #007bff; cursor: pointer; margin-left: auto; white-space: nowrap;}
         @media (max-width: 768px) { .mobile-move { display: block; } }
 
-        /* 待分配區 */
-        #unassigned-area {
-            background: #fff3e0; border: 2px dashed #ffb74d; margin-bottom: 20px;
-            padding: 15px; border-radius: 12px;
-        }
-        #unassigned-area .diver-list { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; min-height: 50px; }
-        #unassigned-area .diver-card { margin: 0; width: auto; }
-
-        /* --- Modal 共用 --- */
+        /* Modal */
         .modal { 
             display: none; position: fixed; z-index: 9999; left: 0; top: 0; 
             width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);
@@ -151,7 +163,6 @@
         }
         .close:hover { color: #000; }
         
-        /* 管理與匯入 */
         .manage-section { flex-grow: 1; overflow-y: auto; border-bottom: 2px solid #eee; margin-bottom: 15px; padding-bottom: 10px;}
         .manage-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; border-bottom: 1px solid #eee; }
         .manage-item:nth-child(even) { background-color: #fafafa; }
@@ -159,11 +170,9 @@
         .batch-add textarea { width: 100%; height: 80px; margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #90caf9; box-sizing: border-box; font-family: monospace; }
         .single-add { display: flex; gap: 10px; flex-wrap: wrap; background: #f9f9f9; padding: 10px; border-radius: 6px; }
         .single-add input, .single-add select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; flex-grow: 1; min-width: 100px;}
-
-        /* 輸出/讀取視窗 */
+        
         textarea.result-box { width: 100%; height: 250px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: monospace; line-height: 1.5; resize: none; margin-bottom: 10px; box-sizing: border-box;}
-
-        /* 移動選單 */
+        
         .move-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; overflow-y: auto; max-height: 60vh; }
         .btn-move-option { padding: 15px; font-size: 16px; border: 2px solid var(--border); border-radius: 8px; background: #fff; color: #333; text-align: center; font-weight: bold; transition: all 0.2s; }
         .btn-move-option:active { background: #e0e0e0; transform: scale(0.98); }
@@ -174,12 +183,20 @@
 </head>
 <body>
 
-    <h1>自由潛水分配 v10.0</h1>
+    <h1>自由潛水分配 v12.0</h1>
 
     <div class="controls">
-        <button class="btn-manage" type="button" onclick="openManager()">⚙️ 編輯/匯入</button>
+        <button class="btn-manage" type="button" onclick="openManager()">⚙️ 編輯</button>
         <div class="control-group">
-            <label>浮球數:</label>
+            <label>模式:</label>
+            <select id="assignLogic" class="logic-select">
+                <option value="balance" selected>⚖️ 平均分配 (強弱平均)</option>
+                <option value="group">💎 能力分組 (強強一組)</option>
+                <option value="random">🎲 隨機分配 (大亂鬥)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>球數:</label>
             <input type="number" id="buoyCount" value="4" min="1" max="20" onchange="adjustBuoyCount()">
         </div>
         <div class="control-group">
@@ -237,7 +254,6 @@
         <div class="modal-content" style="max-height: 600px;">
             <span class="close" onclick="closeModal('exportModal')">&times;</span>
             <h2 style="margin-top:0;">分配結果</h2>
-            <div style="font-size:0.9em; color:#666; margin-bottom:5px;">可複製下方文字，下次使用「讀取」功能還原。</div>
             <textarea id="exportText" class="result-box" readonly></textarea>
             <div style="display:flex; gap:10px;">
                 <button class="btn-primary" onclick="copyToClipboard()" style="flex:1;">複製</button>
@@ -291,212 +307,182 @@
             if (pool.children.length === 0 && divers.length > 0) {
                 divers.forEach(diver => pool.appendChild(createDiverCard(diver)));
             }
-            // 第一次載入時只有在 pool 有人且浮球沒人時才自動分配，避免蓋掉手動還原的狀態
             if (divers.length > 0 && container.children.length > 0 && document.querySelectorAll('.buoy-list .diver-card').length === 0) {
                  autoAssign();
             }
         };
 
         function loadDivers() {
-            const saved = localStorage.getItem('freediving_divers_v10');
+            const saved = localStorage.getItem('freediving_divers_v12'); // update key
             divers = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultDivers));
         }
-        function saveDivers() { localStorage.setItem('freediving_divers_v10', JSON.stringify(divers)); }
+        function saveDivers() { localStorage.setItem('freediving_divers_v12', JSON.stringify(divers)); }
 
-        // --- Modal ---
+        // --- 分配核心邏輯 (v12 人數控管更新) ---
+        function autoAssign() {
+            const pool = document.getElementById('pool');
+            const buoys = document.querySelectorAll('.buoy-list');
+            
+            // 1. 回收所有人到 Pool
+            buoys.forEach(list => { while(list.firstChild) pool.appendChild(list.firstChild); });
+            
+            // 2. 獲取所有卡片並重置狀態
+            let allCards = Array.from(pool.children);
+            allCards.forEach(card => card.dataset.manualLeader = "false");
+
+            // 3. 取得設定
+            const logic = document.getElementById('assignLogic').value;
+            const buoyCount = parseInt(document.getElementById('buoyCount').value);
+            const maxCapacity = parseInt(document.getElementById('maxCapacity').value);
+
+            // 4. 排序
+            if (logic === 'random') {
+                for (let i = allCards.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [allCards[i], allCards[j]] = [allCards[j], allCards[i]];
+                }
+            } else {
+                // 能力與平均分配都先依等級高->低排
+                allCards.sort((a, b) => parseInt(b.dataset.rank) - parseInt(a.dataset.rank));
+            }
+            
+            // 5. 確保 Pool 內的順序也跟著變 (視覺上比較整齊)
+            allCards.forEach(card => pool.appendChild(card));
+
+            // 6. 分配邏輯 (嚴格遵守 maxCapacity)
+            if (logic === 'group') {
+                // 能力分組：填滿第1球，再填第2球... (填不下就去下一球，全滿就留 Pool)
+                let currentBuoyIndex = 1;
+                allCards.forEach(card => {
+                    let list = document.getElementById(`buoy-list-${currentBuoyIndex}`);
+                    
+                    // 如果當前這球滿了，找下一顆
+                    while (list && list.children.length >= maxCapacity && currentBuoyIndex < buoyCount) {
+                        currentBuoyIndex++;
+                        list = document.getElementById(`buoy-list-${currentBuoyIndex}`);
+                    }
+                    
+                    // 如果找到了且沒滿，放進去；否則不動 (留在 Pool)
+                    if(list && list.children.length < maxCapacity) {
+                        list.appendChild(card);
+                    }
+                });
+
+            } else {
+                // 平均分配 (Balance) 或 隨機 (Random) - 採用 Round Robin 發牌
+                // 如果目標球滿了，嘗試找下一顆空的，若全滿則留 Pool
+                
+                allCards.forEach((card, index) => {
+                    let placed = false;
+                    let startNode = (index % buoyCount) + 1; // 預計要去哪顆球
+                    
+                    // 嘗試 buoyCount 次，看看有沒有空位
+                    for (let i = 0; i < buoyCount; i++) {
+                        // 計算實際目標 (若遇到滿的就往後推)
+                        let targetBuoy = ((startNode + i - 1) % buoyCount) + 1;
+                        let list = document.getElementById(`buoy-list-${targetBuoy}`);
+
+                        if (list && list.children.length < maxCapacity) {
+                            list.appendChild(card);
+                            placed = true;
+                            break; // 成功放入，跳出迴圈處理下一張卡
+                        }
+                    }
+                    // 若迴圈跑完 placed 還是 false，代表全滿，卡片自動留在 Pool
+                });
+            }
+
+            updateAllStats();
+        }
+
+        // --- 其他功能 ---
         function openManager() { document.getElementById('managerModal').style.display = 'flex'; renderManageList(); }
         function openExport() { document.getElementById('exportModal').style.display = 'flex'; generateExportText(); }
         function openRestore() { document.getElementById('restoreModal').style.display = 'flex'; document.getElementById('restoreInput').value = ''; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = function(event) { if (event.target.classList.contains('modal')) event.target.style.display = 'none'; }
 
-        // --- 還原功能 (核心邏輯) ---
         function restoreFromText() {
             const text = document.getElementById('restoreInput').value.trim();
             if(!text) { alert("請輸入內容"); return; }
-            
             const lines = text.split('\n');
-            let tempDivers = [];
-            let placements = []; // { name: 'xxx', target: 'buoy-list-1', isLeader: true }
-            let currentTarget = 'pool';
-            let maxBuoyFound = 0;
-
-            // 1. 解析文字
+            let tempDivers = []; let placements = []; let currentTarget = 'pool'; let maxBuoyFound = 0;
             lines.forEach(line => {
-                line = line.trim();
-                if (!line) return;
-
-                // 偵測浮球區塊
+                line = line.trim(); if (!line) return;
                 const buoyMatch = line.match(/【浮球 #(\d+)】/);
-                if (buoyMatch) {
-                    const buoyId = parseInt(buoyMatch[1]);
-                    currentTarget = `buoy-list-${buoyId}`;
-                    if (buoyId > maxBuoyFound) maxBuoyFound = buoyId;
-                    return;
-                }
-
-                // 偵測待分配區
-                if (line.includes('待分配區')) {
-                    currentTarget = 'pool';
-                    return;
-                }
-
-                // 忽略標題分隔線
+                if (buoyMatch) { const bId = parseInt(buoyMatch[1]); currentTarget = `buoy-list-${bId}`; if (bId > maxBuoyFound) maxBuoyFound = bId; return; }
+                if (line.includes('待分配區')) { currentTarget = 'pool'; return; }
                 if (line.includes('🌊') || line.includes('---') || line.includes('目前沒有分配')) return;
-
-                // 解析人員行: ⭐ 張三 (教練) 或 張三 (教練)
-                // Regex: 開頭可能有 ⭐ 或空格 -> 名字 -> 空格 -> (稱號)
                 const diverMatch = line.match(/^([⭐\s]*)(.+?)\s*\((.+)\)$/);
-                
                 if (diverMatch) {
-                    const prefix = diverMatch[1];
-                    const name = diverMatch[2].trim();
-                    const roleRaw = diverMatch[3].trim();
-                    const isManualLeader = prefix.includes('⭐');
-                    
-                    // 決定 Rank
-                    let rank = 1;
-                    let role = roleRaw;
+                    const prefix = diverMatch[1]; const name = diverMatch[2].trim(); const roleRaw = diverMatch[3].trim(); const isMan = prefix.includes('⭐');
+                    let rank = 1; let role = roleRaw;
                     if (roleRaw.toLowerCase() === 'newbie' || roleRaw === '無證') { role = 'Newbie'; rank = 1; } 
-                    else { 
-                        let upperRole = roleRaw.toUpperCase();
-                        if (upperRole.includes('教練')) rank = 5; 
-                        else if (upperRole === 'A4' || upperRole === 'W3') rank = 4; 
-                        else if (upperRole === 'A3' || upperRole === 'W2') rank = 3; 
-                        else if (upperRole === 'A2' || upperRole === 'W1') rank = 2; 
-                    }
-
-                    // 存入臨時資料
-                    tempDivers.push({ name, role, rank });
-                    placements.push({ name, target: currentTarget, isLeader: isManualLeader });
+                    else { let ur = roleRaw.toUpperCase(); if (ur.includes('教練')) rank = 5; else if (ur === 'A4' || ur === 'W3') rank = 4; else if (ur === 'A3' || ur === 'W2') rank = 3; else if (ur === 'A2' || ur === 'W1') rank = 2; }
+                    tempDivers.push({ name, role, rank }); placements.push({ name, target: currentTarget, isLeader: isMan });
                 }
             });
-
-            if (tempDivers.length === 0) { alert("無法解析內容，請確認格式是否正確！"); return; }
-
-            if(confirm(`解析成功！共找到 ${tempDivers.length} 人，最大浮球號 ${maxBuoyFound}。\n確定要還原此配置嗎？(目前的資料將被覆蓋)`)) {
-                // 2. 應用還原
-                divers = tempDivers;
-                saveDivers();
-
-                // 更新浮球數量
+            if (tempDivers.length === 0) { alert("無法解析"); return; }
+            if(confirm(`解析成功！共 ${tempDivers.length} 人，確定還原？`)) {
+                divers = tempDivers; saveDivers();
                 let currentBuoyInput = parseInt(document.getElementById('buoyCount').value);
-                if (maxBuoyFound > currentBuoyInput) {
-                    document.getElementById('buoyCount').value = maxBuoyFound;
-                }
-                
-                // 重建 DOM
-                const container = document.getElementById('buoyContainer');
-                container.innerHTML = '';
+                if (maxBuoyFound > currentBuoyInput) document.getElementById('buoyCount').value = maxBuoyFound;
+                const container = document.getElementById('buoyContainer'); container.innerHTML = '';
                 const finalBuoyCount = parseInt(document.getElementById('buoyCount').value);
                 for(let i=1; i<=finalBuoyCount; i++) createBuoyHTML(i, container);
-                
-                const pool = document.getElementById('pool');
-                pool.innerHTML = '';
-
-                // 3. 放置卡片
+                const pool = document.getElementById('pool'); pool.innerHTML = '';
                 placements.forEach(p => {
-                    const diverData = divers.find(d => d.name === p.name);
-                    if(diverData) {
-                        const card = createDiverCard(diverData);
-                        if(p.isLeader) card.dataset.manualLeader = "true";
-                        
-                        // 找目標容器
-                        const targetEl = document.getElementById(p.target);
-                        if(targetEl) {
-                            targetEl.appendChild(card);
-                        } else {
-                            // 如果目標浮球不存在(例如user沒開那麼多顆)，丟回 pool
-                            pool.appendChild(card);
-                        }
+                    const d = divers.find(x => x.name === p.name);
+                    if(d) {
+                        const card = createDiverCard(d); if(p.isLeader) card.dataset.manualLeader = "true";
+                        const t = document.getElementById(p.target); if(t) t.appendChild(card); else pool.appendChild(card);
                     }
                 });
-
-                updateAllStats();
-                closeModal('restoreModal');
-                alert("還原完成！");
+                updateAllStats(); closeModal('restoreModal'); alert("還原完成！");
             }
         }
 
-        // --- 移動選單 ---
         function showMobileMenu(btn) {
-            const card = btn.closest('.diver-card');
-            currentMovingCardId = card.id;
+            const card = btn.closest('.diver-card'); currentMovingCardId = card.id;
             document.getElementById('moveTargetName').innerText = `移動：${card.dataset.name}`;
-            const container = document.getElementById('moveOptions');
-            container.innerHTML = '';
-            
-            const poolBtn = document.createElement('button');
-            poolBtn.className = 'btn-move-option btn-move-pool';
-            poolBtn.innerText = '🏠 待分配區';
-            poolBtn.onclick = () => executeMove('pool');
-            container.appendChild(poolBtn);
-            
+            const container = document.getElementById('moveOptions'); container.innerHTML = '';
+            const poolBtn = document.createElement('button'); poolBtn.className = 'btn-move-option btn-move-pool'; poolBtn.innerText = '🏠 待分配區'; poolBtn.onclick = () => executeMove('pool'); container.appendChild(poolBtn);
             const buoyCount = parseInt(document.getElementById('buoyCount').value);
             for(let i=1; i<=buoyCount; i++) {
-                const btn = document.createElement('button');
-                btn.className = 'btn-move-option btn-move-buoy';
-                const currentCount = document.getElementById(`buoy-list-${i}`).children.length;
-                const maxCapacity = document.getElementById('maxCapacity').value;
+                const btn = document.createElement('button'); btn.className = 'btn-move-option btn-move-buoy';
+                const currentCount = document.getElementById(`buoy-list-${i}`).children.length; const maxCapacity = document.getElementById('maxCapacity').value;
                 btn.innerHTML = `浮球 #${i} <br><span style="font-size:0.8em; color:#666">(${currentCount}/${maxCapacity})</span>`;
-                btn.onclick = () => executeMove(`buoy-list-${i}`);
-                container.appendChild(btn);
+                btn.onclick = () => executeMove(`buoy-list-${i}`); container.appendChild(btn);
             }
             document.getElementById('moveModal').style.display = 'flex';
         }
+        function executeMove(targetId) { const card = document.getElementById(currentMovingCardId); const target = document.getElementById(targetId); if(card && target) { target.appendChild(card); updateAllStats(); } closeModal('moveModal'); }
 
-        function executeMove(targetId) {
-            const card = document.getElementById(currentMovingCardId);
-            const target = document.getElementById(targetId);
-            if(card && target) { target.appendChild(card); updateAllStats(); }
-            closeModal('moveModal');
-        }
-
-        // --- 其他功能 (保持 v9) ---
         function batchImport() {
-            const rawText = document.getElementById('batchInput').value.trim();
-            if (!rawText) return;
-            const regex = /(教練|W[1-3]|A[1-4]|Newbie|無證)\s+([^\s]+)/gi;
-            let processText = rawText.replace(/[:：]/g, ' '); 
-            let match; let addedCount = 0; const pool = document.getElementById('pool');
+            const rawText = document.getElementById('batchInput').value.trim(); if (!rawText) return;
+            const regex = /(教練|W[1-3]|A[1-4]|Newbie|無證)\s+([^\s]+)/gi; let processText = rawText.replace(/[:：]/g, ' '); let match; let addedCount = 0; const pool = document.getElementById('pool');
             while ((match = regex.exec(processText)) !== null) {
-                let roleRaw = match[1]; const nameRaw = match[2].trim();
-                let rank = 1; let role = roleRaw;
+                let roleRaw = match[1]; const nameRaw = match[2].trim(); let rank = 1; let role = roleRaw;
                 if (roleRaw.toLowerCase() === 'newbie' || roleRaw === '無證') { role = 'Newbie'; rank = 1; } 
                 else { role = roleRaw.toUpperCase(); if (role.includes('教練')) rank = 5; else if (role === 'A4' || role === 'W3') rank = 4; else if (role === 'A3' || role === 'W2') rank = 3; else if (role === 'A2' || role === 'W1') rank = 2; }
-                if (!divers.some(d => d.name === nameRaw)) {
-                    const newDiver = { name: nameRaw, role: role, rank: rank };
-                    divers.push(newDiver); pool.appendChild(createDiverCard(newDiver)); addedCount++;
-                }
+                if (!divers.some(d => d.name === nameRaw)) { const newDiver = { name: nameRaw, role: role, rank: rank }; divers.push(newDiver); pool.appendChild(createDiverCard(newDiver)); addedCount++; }
             }
-            saveDivers(); renderManageList(); updateAllStats();
-            document.getElementById('batchInput').value = ''; if(addedCount > 0) alert(`已匯入 ${addedCount} 人`);
+            saveDivers(); renderManageList(); updateAllStats(); document.getElementById('batchInput').value = ''; if(addedCount > 0) alert(`已匯入 ${addedCount} 人`);
         }
         function addNewPerson() {
-            const name = document.getElementById('newName').value.trim();
-            if(!name || divers.some(d => d.name === name)) { alert("請輸入有效且不重複的姓名"); return; }
-            const [roleName, rankVal] = document.getElementById('newRole').value.split('|');
-            const newDiver = { name: name, role: roleName, rank: parseInt(rankVal) };
-            divers.push(newDiver); saveDivers(); renderManageList();
-            document.getElementById('pool').appendChild(createDiverCard(newDiver)); updateAllStats(); document.getElementById('newName').value = '';
+            const name = document.getElementById('newName').value.trim(); if(!name || divers.some(d => d.name === name)) { alert("請輸入有效且不重複的姓名"); return; }
+            const [roleName, rankVal] = document.getElementById('newRole').value.split('|'); const newDiver = { name: name, role: roleName, rank: parseInt(rankVal) };
+            divers.push(newDiver); saveDivers(); renderManageList(); document.getElementById('pool').appendChild(createDiverCard(newDiver)); updateAllStats(); document.getElementById('newName').value = '';
         }
         function generateExportText() {
-            const buoyCount = parseInt(document.getElementById('buoyCount').value);
-            let output = "🌊 自由潛水浮球分配表 🌊\n\n"; let hasContent = false;
+            const buoyCount = parseInt(document.getElementById('buoyCount').value); let output = "🌊 自由潛水浮球分配表 🌊\n\n"; let hasContent = false;
             for (let i = 1; i <= buoyCount; i++) {
-                const list = document.getElementById(`buoy-list-${i}`); if (!list) continue;
-                const cards = Array.from(list.children); if (cards.length === 0) continue;
-                hasContent = true; output += `【浮球 #${i}】(${cards.length}人)\n`;
-                const manualLeader = cards.find(c => c.dataset.manualLeader === "true");
-                let leaderCard = manualLeader;
+                const list = document.getElementById(`buoy-list-${i}`); if (!list) continue; const cards = Array.from(list.children); if (cards.length === 0) continue; hasContent = true; output += `【浮球 #${i}】(${cards.length}人)\n`;
+                const manualLeader = cards.find(c => c.dataset.manualLeader === "true"); let leaderCard = manualLeader;
                 if (!leaderCard) { const maxRank = Math.max(...cards.map(c => parseInt(c.dataset.rank))); leaderCard = cards.find(c => parseInt(c.dataset.rank) === maxRank); }
-                cards.forEach(card => {
-                    const isLeader = (card === leaderCard); const prefix = isLeader ? "⭐ " : "   ";
-                    output += `${prefix}${card.dataset.name} (${card.dataset.role})\n`;
-                }); output += "\n";
+                cards.forEach(card => { const isLeader = (card === leaderCard); const prefix = isLeader ? "⭐ " : "   "; output += `${prefix}${card.dataset.name} (${card.dataset.role})\n`; }); output += "\n";
             }
-            const pool = document.getElementById('pool');
-            if (pool.children.length > 0) { output += `---------------\n⚠️ 待分配區：\n`; Array.from(pool.children).forEach(card => output += `${card.dataset.name} (${card.dataset.role})\n`); }
+            const pool = document.getElementById('pool'); if (pool.children.length > 0) { output += `---------------\n⚠️ 待分配區：\n`; Array.from(pool.children).forEach(card => output += `${card.dataset.name} (${card.dataset.role})\n`); }
             if (!hasContent) output += "(目前沒有分配任何人員)"; document.getElementById('exportText').value = output;
         }
         function copyToClipboard() { const t = document.getElementById("exportText"); t.select(); t.setSelectionRange(0, 99999); navigator.clipboard.writeText(t.value).then(()=>alert("已複製")).catch(()=>alert("複製失敗")); }
@@ -512,56 +498,28 @@
         function clearAll() { if(confirm("清空全部？")) { divers = []; saveDivers(); renderManageList(); document.getElementById('pool').innerHTML = ''; document.querySelectorAll('.buoy-list').forEach(el => el.innerHTML = ''); updateAllStats(); } }
         function restoreDefault() { if(confirm("恢復範例名單？")) { divers = JSON.parse(JSON.stringify(defaultDivers)); saveDivers(); renderManageList(); const pool = document.getElementById('pool'); pool.innerHTML = ''; [...divers].sort((a,b) => b.rank - a.rank).forEach(d => pool.appendChild(createDiverCard(d))); document.querySelectorAll('.buoy-list').forEach(list => list.innerHTML = ''); updateAllStats(); } }
         function adjustBuoyCount() {
-            const newCount = parseInt(document.getElementById('buoyCount').value); const container = document.getElementById('buoyContainer');
-            const currentCount = container.children.length;
+            const newCount = parseInt(document.getElementById('buoyCount').value); const container = document.getElementById('buoyContainer'); const currentCount = container.children.length;
             if (newCount > currentCount) { for (let i = currentCount + 1; i <= newCount; i++) createBuoyHTML(i, container); } 
             else if (newCount < currentCount) { const pool = document.getElementById('pool'); for (let i = currentCount; i > newCount; i--) { const list = document.getElementById(`buoy-list-${i}`); while (list.children.length > 0) pool.appendChild(list.children[0]); document.getElementById(`buoy-${i}`).remove(); } }
             updateAllStats();
         }
-        function autoAssign() {
-            const pool = document.getElementById('pool'); const buoys = document.querySelectorAll('.buoy-list');
-            buoys.forEach(list => { while(list.firstChild) pool.appendChild(list.firstChild); });
-            const allCards = Array.from(pool.children); allCards.sort((a, b) => parseInt(b.dataset.rank) - parseInt(a.dataset.rank));
-            allCards.forEach(card => pool.appendChild(card));
-            const buoyCount = parseInt(document.getElementById('buoyCount').value); const maxCapacity = parseInt(document.getElementById('maxCapacity').value);
-            let idx = 1;
-            allCards.forEach(card => {
-                card.dataset.manualLeader = "false";
-                let list = document.getElementById(`buoy-list-${idx}`);
-                if (list && list.children.length >= maxCapacity && idx < buoyCount) { idx++; list = document.getElementById(`buoy-list-${idx}`); }
-                if(list) list.appendChild(card);
-            }); updateAllStats();
-        }
-        function createBuoyHTML(id, container) {
-            const div = document.createElement('div'); div.className = 'buoy'; div.id = `buoy-${id}`;
-            div.innerHTML = `<div class="buoy-header"><span style="font-weight:bold;">浮球 #${id}</span></div><div class="buoy-stats" id="stats-${id}">0 人</div><div class="diver-list buoy-list" id="buoy-list-${id}" ondrop="drop(event)" ondragover="allowDrop(event)" data-buoy-id="${id}"></div>`;
-            container.appendChild(div);
-        }
+        function createBuoyHTML(id, container) { const div = document.createElement('div'); div.className = 'buoy'; div.id = `buoy-${id}`; div.innerHTML = `<div class="buoy-header"><span style="font-weight:bold;">浮球 #${id}</span></div><div class="buoy-stats" id="stats-${id}">0 人</div><div class="diver-list buoy-list" id="buoy-list-${id}" ondrop="drop(event)" ondragover="allowDrop(event)" data-buoy-id="${id}"></div>`; container.appendChild(div); }
         function createDiverCard(diver) {
-            const div = document.createElement('div'); div.className = `diver-card rank-${diver.rank}`; div.draggable = true; div.id = `diver-${diver.name}`;
-            div.dataset.rank = diver.rank; div.dataset.name = diver.name; div.dataset.role = diver.role; div.dataset.manualLeader = "false"; 
-            div.ondragstart = drag;
+            const div = document.createElement('div'); div.className = `diver-card rank-${diver.rank}`; div.draggable = true; div.id = `diver-${diver.name}`; div.dataset.rank = diver.rank; div.dataset.name = diver.name; div.dataset.role = diver.role; div.dataset.manualLeader = "false"; div.ondragstart = drag;
             div.innerHTML = `<div class="diver-info"><span class="leader-icon" onclick="toggleLeader(this, event)">★</span><strong>${diver.name}</strong><span style="font-size:0.75em; padding:2px 6px; border-radius:4px; background:rgba(0,0,0,0.1); font-weight:bold;">${diver.role}</span></div><span class="mobile-move" onclick="showMobileMenu(this)">移動</span>`;
             return div;
         }
         function toggleLeader(icon, event) {
-            event.stopPropagation(); const card = icon.closest('.diver-card'); const list = card.parentElement;
-            if(list.id === 'pool') { alert("請先將人員移入浮球後再指定球長"); return; }
-            const isMan = card.dataset.manualLeader === "true"; Array.from(list.children).forEach(c => c.dataset.manualLeader = "false");
-            if (!isMan) card.dataset.manualLeader = "true"; updateAllStats();
+            event.stopPropagation(); const card = icon.closest('.diver-card'); const list = card.parentElement; if(list.id === 'pool') { alert("請先將人員移入浮球後再指定球長"); return; }
+            const isMan = card.dataset.manualLeader === "true"; Array.from(list.children).forEach(c => c.dataset.manualLeader = "false"); if (!isMan) card.dataset.manualLeader = "true"; updateAllStats();
         }
         function updateAllStats() {
             const count = parseInt(document.getElementById('buoyCount').value); const max = parseInt(document.getElementById('maxCapacity').value);
             for (let i = 1; i <= count; i++) {
-                const list = document.getElementById(`buoy-list-${i}`); if (!list) continue;
-                const cards = Array.from(list.children); const len = cards.length;
+                const list = document.getElementById(`buoy-list-${i}`); if (!list) continue; const cards = Array.from(list.children); const len = cards.length;
                 const st = document.getElementById(`stats-${i}`); st.textContent = `${len} / ${max} 人`; st.className = `buoy-stats ${len > max ? 'over-limit' : ''}`;
                 cards.forEach(c => { c.classList.remove('is-auto-leader'); c.classList.remove('is-manual-leader'); });
-                if (len > 0) {
-                    const man = cards.find(c => c.dataset.manualLeader === "true");
-                    if (man) man.classList.add('is-manual-leader');
-                    else { const maxR = Math.max(...cards.map(c => parseInt(c.dataset.rank))); const auto = cards.find(c => parseInt(c.dataset.rank) === maxR); if(auto) auto.classList.add('is-auto-leader'); }
-                }
+                if (len > 0) { const man = cards.find(c => c.dataset.manualLeader === "true"); if (man) man.classList.add('is-manual-leader'); else { const maxR = Math.max(...cards.map(c => parseInt(c.dataset.rank))); const auto = cards.find(c => parseInt(c.dataset.rank) === maxR); if(auto) auto.classList.add('is-auto-leader'); } }
             }
         }
         function allowDrop(ev) { ev.preventDefault(); const b = ev.target.closest('.buoy'); if(b) b.classList.add('drag-over'); }
@@ -571,3 +529,5 @@
     </script>
 </body>
 </html>
+
+```
