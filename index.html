@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自由潛水浮球分配系統 v6.0 (修正版)</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --primary: #007bff;
+            --danger: #dc3545;
+            --success: #28a745;
+            --info: #17a2b8;
+            --border: #dfe3e8;
+            --coach-color: #ffebee; --coach-border: #ef9a9a;
+            --high-color: #e8eaf6; --high-border: #9fa8da;
+            --mid-color: #e3f2fd; --mid-border: #90caf9;
+            --low-color: #e0f2f1; --low-border: #80cbc4;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+
+        /* 按鈕樣式 */
+        button {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+            font-size: 14px;
+        }
+        button:hover { opacity: 0.9; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-info { background-color: var(--info); color: white; }
+        .btn-reset { background-color: #6c757d; color: white; }
+        .btn-manage { background-color: #2c3e50; color: white; margin-right: 10px; }
+
+        /* 控制面板 */
+        .controls {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        input[type="number"] {
+            padding: 8px; border-radius: 6px; border: 1px solid var(--border);
+            width: 60px; text-align: center; font-size: 16px;
+        }
+
+        /* 浮球區域 */
+        .buoy-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .buoy {
+            background: var(--card-bg); border-radius: 12px;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex; flexDirection: column; overflow: hidden;
+            transition: all 0.2s;
+        }
+        .buoy.drag-over { border-color: var(--primary); background-color: #f0f7ff; }
+        .buoy-header { background: #2c3e50; color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .buoy-stats { padding: 8px 12px; background: #ecf0f1; font-size: 0.9em; text-align: right; border-bottom: 1px solid var(--border); }
+        .buoy-stats.over-limit { color: #c62828; font-weight: bold; background: #ffcdd2; }
+        .diver-list { padding: 10px; min-height: 100px; flex-grow: 1; }
+
+        /* 潛水員卡片 */
+        .diver-card {
+            padding: 8px 10px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #ccc;
+            cursor: grab; display: flex; justify-content: space-between; align-items: center;
+            user-select: none; position: relative;
+        }
+        .diver-card:active { cursor: grabbing; }
+        .rank-5 { background: var(--coach-color); border-color: var(--coach-border); }
+        .rank-4 { background: var(--high-color); border-color: var(--high-border); }
+        .rank-3 { background: var(--mid-color); border-color: var(--mid-border); }
+        .rank-2 { background: var(--low-color); border-color: var(--low-border); }
+        
+        .diver-info { 
+            display: flex; align-items: center; gap: 8px; 
+            white-space: nowrap; 
+            overflow: hidden;
+        }
+        
+        /* 星星樣式 */
+        .leader-icon { 
+            cursor: pointer; 
+            font-size: 1.2em; 
+            color: #ccc;
+            transition: transform 0.2s;
+        }
+        .leader-icon:hover { transform: scale(1.2); }
+        .is-auto-leader .leader-icon { color: #f1c40f; } /* 黃星 */
+        .is-manual-leader .leader-icon { color: #ff5722; text-shadow: 0 0 2px rgba(0,0,0,0.2); } /* 紅星 */
+
+        .mobile-move { display: none; font-size: 0.8em; color: #007bff; cursor: pointer; text-decoration: underline; margin-left: auto; white-space: nowrap;}
+        @media (max-width: 768px) { .mobile-move { display: block; } }
+
+        /* 待分配區 */
+        #unassigned-area {
+            background: #fff3e0; border: 2px dashed #ffb74d; margin-bottom: 20px;
+            padding: 15px; border-radius: 12px;
+        }
+        #unassigned-area .diver-list { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; min-height: 50px; }
+        #unassigned-area .diver-card { margin: 0; width: auto; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 2% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 700px; border-radius: 12px; position: relative; max-height: 95vh; display: flex; flex-direction: column; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; position: absolute; right: 20px; top: 10px;}
+        
+        .manage-section { flex-grow: 1; overflow-y: auto; border-bottom: 2px solid #eee; margin-bottom: 15px; padding-bottom: 10px;}
+        .manage-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; }
+        .manage-item:nth-child(even) { background-color: #fafafa; }
+        
+        .batch-add { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 15px;}
+        .batch-add textarea { width: 100%; height: 100px; margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #90caf9; box-sizing: border-box; font-family: monospace; }
+        .single-add { display: flex; gap: 10px; flex-wrap: wrap; background: #f9f9f9; padding: 10px; border-radius: 6px; }
+        .single-add input, .single-add select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; flex-grow: 1; }
+
+    </style>
+</head>
+<body>
+
+    <h1>自由潛水浮球分配系統</h1>
+
+    <div class="controls">
+        <button class="btn-manage" onclick="openManager()">⚙️ 編輯/匯入名單</button>
+        <div class="control-group">
+            <label>浮球數:</label>
+            <input type="number" id="buoyCount" value="4" min="1" max="20" onchange="adjustBuoyCount()">
+        </div>
+        <div class="control-group">
+            <label>上限:</label>
+            <input type="number" id="maxCapacity" value="4" min="1" max="10" onchange="updateAllStats()">
+        </div>
+        <button class="btn-primary" onclick="autoAssign()">自動分配</button>
+        <button class="btn-reset" onclick="resetToUnassigned()">重置全部</button>
+    </div>
+
+    <div id="unassigned-area">
+        <div style="font-weight:bold; color:#e65100; margin-bottom:10px;">待分配人員 (拖曳至下方)</div>
+        <div class="diver-list" id="pool" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    </div>
+
+    <div class="buoy-container" id="buoyContainer"></div>
+
+    <div id="managerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeManager()">&times;</span>
+            <h2>人員資料管理</h2>
+            
+            <div class="manage-section">
+                <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <strong>目前名單 (<span id="countDisplay">0</span> 人)</strong>
+                    <button class="btn-danger" style="font-size:12px;" onclick="clearAll()">清空全部</button>
+                </div>
+                <div id="manageList"></div>
+            </div>
+
+            <div class="input-section">
+                <div class="batch-add">
+                    <span style="font-weight:bold; color:#1565c0; display:block; margin-bottom:5px;">📝 批量匯入 (支援 Excel、Line 貼上)</span>
+                    <div style="font-size:0.8em; color:#555; margin-bottom:8px;">支援 Tab、空格、換行分隔。重複姓名會自動略過。</div>
+                    <textarea id="batchInput" placeholder="教練	王小明&#10;W3	李大華&#10;A2	張小美..."></textarea>
+                    <button class="btn-info" onclick="batchImport()">解析並匯入</button>
+                </div>
+
+                <div class="single-add">
+                    <input type="text" id="newName" placeholder="姓名">
+                    <select id="newRole">
+                        <option value="教練|5">教練</option>
+                        <option value="A4|4">A4 / W3</option>
+                        <option value="A3|3">A3 / W2</option>
+                        <option value="A2|2">A2 / W1</option>
+                    </select>
+                    <button class="btn-success" onclick="addNewPerson()">新增</button>
+                    <button class="btn-reset" onclick="restoreDefault()">恢復範例名單</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 修正2：更改為範例名單
+        const defaultDivers = [
+            { name: "教練Alex", role: "教練", rank: 5 }, 
+            { name: "教練Ben", role: "教練", rank: 5 }, 
+            { name: "助教Cindy", role: "W3", rank: 4 },
+            { name: "學員David", role: "A3", rank: 3 },
+            { name: "學員Eric", role: "A3", rank: 3 },
+            { name: "學員Frank", role: "W2", rank: 3 },
+            { name: "學員Gina", role: "A2", rank: 2 },
+            { name: "學員Helen", role: "A2", rank: 2 },
+            { name: "學員Ivy", role: "A2", rank: 2 },
+            { name: "學員Jack", role: "A2", rank: 2 },
+            { name: "學員Kevin", role: "A2", rank: 2 },
+            { name: "學員Lily", role: "W2", rank: 3 }
+        ];
+
+        let divers = [];
+
+        window.onload = function() { 
+            // 1. 讀取資料
+            loadDivers(); 
+            
+            // 2. 初始化浮球
+            const buoyCount = parseInt(document.getElementById('buoyCount').value);
+            const container = document.getElementById('buoyContainer');
+            container.innerHTML = '';
+            for(let i=1; i<=buoyCount; i++) createBuoyHTML(i, container);
+            
+            // 3. 修正3：初始化時，如果 Pool 是空的，要先根據資料建立卡片
+            const pool = document.getElementById('pool');
+            if (pool.children.length === 0 && divers.length > 0) {
+                divers.forEach(diver => {
+                    pool.appendChild(createDiverCard(diver));
+                });
+            }
+
+            // 4. 自動分配
+            autoAssign(); 
+        };
+
+        // 修正4：使用 v6 key，避開舊的真實名單
+        function loadDivers() {
+            const saved = localStorage.getItem('freediving_divers_v6');
+            divers = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultDivers));
+        }
+        function saveDivers() { localStorage.setItem('freediving_divers_v6', JSON.stringify(divers)); }
+
+        // --- 管理介面與即時同步邏輯 ---
+        function openManager() { document.getElementById('managerModal').style.display = 'block'; renderManageList(); }
+        function closeManager() { document.getElementById('managerModal').style.display = 'none'; }
+        window.onclick = function(event) { if (event.target == document.getElementById('managerModal')) closeManager(); }
+
+        function renderManageList() {
+            const listDiv = document.getElementById('manageList');
+            document.getElementById('countDisplay').innerText = divers.length;
+            listDiv.innerHTML = '';
+            [...divers].sort((a,b) => b.rank - a.rank).forEach((p) => {
+                const item = document.createElement('div');
+                item.className = 'manage-item';
+                item.innerHTML = `
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <span style="font-weight:bold;">${p.name}</span>
+                        <span style="background:#eee; padding:2px 6px; border-radius:4px; font-size:0.8em;">${p.role}</span>
+                    </div>
+                    <button class="btn-danger" style="font-size:12px; padding:4px 8px;" onclick="deletePerson('${p.name}')">刪除</button>
+                `;
+                listDiv.appendChild(item);
+            });
+        }
+
+        function addNewPerson() {
+            const name = document.getElementById('newName').value.trim();
+            if(!name || divers.some(d => d.name === name)) { alert("請輸入有效且不重複的姓名"); return; }
+            const [roleName, rankVal] = document.getElementById('newRole').value.split('|');
+            
+            const newDiver = { name: name, role: roleName, rank: parseInt(rankVal) };
+            divers.push(newDiver);
+            saveDivers(); 
+            renderManageList();
+            document.getElementById('pool').appendChild(createDiverCard(newDiver));
+            updateAllStats();
+            document.getElementById('newName').value = '';
+        }
+
+        function batchImport() {
+            const rawText = document.getElementById('batchInput').value.trim();
+            if (!rawText) return;
+            const regex = /(教練|W[1-3]|A[1-4])\s+([^\s]+)/gi;
+            let processText = rawText.replace(/[:：]/g, ' '); 
+            let match;
+            let addedCount = 0;
+            const pool = document.getElementById('pool');
+
+            while ((match = regex.exec(processText)) !== null) {
+                const roleRaw = match[1];
+                const nameRaw = match[2].trim();
+                let rank = 2;
+                let role = roleRaw.toUpperCase();
+                if (role.includes('教練')) rank = 5;
+                else if (role === 'A4' || role === 'W3') rank = 4;
+                else if (role === 'A3' || role === 'W2') rank = 3;
+                else if (role === 'A2' || role === 'W1') rank = 2;
+
+                if (!divers.some(d => d.name === nameRaw)) {
+                    const newDiver = { name: nameRaw, role: role, rank: rank };
+                    divers.push(newDiver);
+                    pool.appendChild(createDiverCard(newDiver));
+                    addedCount++;
+                }
+            }
+            saveDivers(); renderManageList(); updateAllStats();
+            document.getElementById('batchInput').value = '';
+            if(addedCount > 0) alert(`已匯入並新增 ${addedCount} 人到待分配區`);
+        }
+
+        function deletePerson(name) {
+            if(confirm(`確定刪除 ${name}？`)) { 
+                divers = divers.filter(d => d.name !== name); 
+                saveDivers(); 
+                renderManageList();
+                const card = document.getElementById(`diver-${name}`);
+                if(card) card.remove();
+                updateAllStats();
+            }
+        }
+
+        function clearAll() {
+            if(confirm("清空全部？")) { 
+                divers = []; saveDivers(); renderManageList(); 
+                document.getElementById('pool').innerHTML = '';
+                document.querySelectorAll('.buoy-list').forEach(el => el.innerHTML = '');
+                updateAllStats();
+            } 
+        }
+
+        function restoreDefault() {
+            if(confirm("恢復範例名單並重置畫面？")) { 
+                divers = JSON.parse(JSON.stringify(defaultDivers)); 
+                saveDivers(); 
+                renderManageList();
+                resetToUnassigned(); 
+            } 
+        }
+
+        // --- 浮球動態管理 ---
+        function adjustBuoyCount() {
+            const newCount = parseInt(document.getElementById('buoyCount').value);
+            const container = document.getElementById('buoyContainer');
+            const currentCount = container.children.length;
+
+            if (newCount > currentCount) {
+                for (let i = currentCount + 1; i <= newCount; i++) createBuoyHTML(i, container);
+            } else if (newCount < currentCount) {
+                const pool = document.getElementById('pool');
+                for (let i = currentCount; i > newCount; i--) {
+                    const buoyList = document.getElementById(`buoy-list-${i}`);
+                    while (buoyList.children.length > 0) pool.appendChild(buoyList.children[0]);
+                    document.getElementById(`buoy-${i}`).remove();
+                }
+            }
+            updateAllStats();
+        }
+
+        // --- 分配核心 ---
+        function autoAssign() {
+            const pool = document.getElementById('pool');
+            const buoys = document.querySelectorAll('.buoy-list');
+            // 回收所有人到 pool
+            buoys.forEach(list => { while(list.firstChild) pool.appendChild(list.firstChild); });
+
+            // 排序
+            const allCards = Array.from(pool.children);
+            allCards.sort((a, b) => parseInt(b.dataset.rank) - parseInt(a.dataset.rank));
+            allCards.forEach(card => pool.appendChild(card));
+
+            // 分配
+            const buoyCount = parseInt(document.getElementById('buoyCount').value);
+            const maxCapacity = parseInt(document.getElementById('maxCapacity').value);
+            let currentBuoyIndex = 1;
+
+            allCards.forEach(card => {
+                card.dataset.manualLeader = "false"; // 重置手動球長
+                let currentBuoyList = document.getElementById(`buoy-list-${currentBuoyIndex}`);
+                if (currentBuoyList && currentBuoyList.children.length >= maxCapacity && currentBuoyIndex < buoyCount) {
+                    currentBuoyIndex++;
+                    currentBuoyList = document.getElementById(`buoy-list-${currentBuoyIndex}`);
+                }
+                if(currentBuoyList) currentBuoyList.appendChild(card);
+            });
+            updateAllStats();
+        }
+
+        function resetToUnassigned() {
+            const pool = document.getElementById('pool');
+            pool.innerHTML = ''; // 清空目前的 DOM
+            // 重新根據 divers 資料建立卡片
+            [...divers].sort((a,b) => b.rank - a.rank).forEach(d => {
+                pool.appendChild(createDiverCard(d));
+            });
+            
+            // 清空浮球內容
+            const buoys = document.querySelectorAll('.buoy-list');
+            buoys.forEach(list => list.innerHTML = '');
+            
+            updateAllStats();
+        }
+
+        // 修正1：浮球Header移除文字
+        function createBuoyHTML(id, container) {
+            const div = document.createElement('div');
+            div.className = 'buoy';
+            div.id = `buoy-${id}`;
+            div.innerHTML = `
+                <div class="buoy-header">
+                    <span style="font-weight:bold;">浮球 #${id}</span>
+                    </div>
+                <div class="buoy-stats" id="stats-${id}">0 人</div>
+                <div class="diver-list buoy-list" id="buoy-list-${id}" 
+                     ondrop="drop(event)" ondragover="allowDrop(event)" data-buoy-id="${id}"></div>
+            `;
+            container.appendChild(div);
+        }
+
+        function createDiverCard(diver) {
+            const div = document.createElement('div');
+            div.className = `diver-card rank-${diver.rank}`;
+            div.draggable = true;
+            div.id = `diver-${diver.name}`;
+            div.dataset.rank = diver.rank; div.dataset.name = diver.name; div.dataset.role = diver.role;
+            div.dataset.manualLeader = "false"; 
+
+            div.ondragstart = drag;
+            div.innerHTML = `
+                <div class="diver-info">
+                    <span class="leader-icon" onclick="toggleLeader(this, event)" title="點擊設為浮球長">★</span>
+                    <strong>${diver.name}</strong>
+                    <span style="font-size:0.75em; padding:2px 6px; border-radius:4px; background:rgba(0,0,0,0.1); font-weight:bold;">${diver.role}</span>
+                </div>
+                <span class="mobile-move" onclick="showMobileMenu(this)">移動</span>
+            `;
+            return div;
+        }
+
+        function toggleLeader(icon, event) {
+            event.stopPropagation();
+            const card = icon.closest('.diver-card');
+            const list = card.parentElement;
+            if(list.id === 'pool') { alert("請先將人員移入浮球後再指定球長"); return; }
+            const isCurrentlyManual = card.dataset.manualLeader === "true";
+            Array.from(list.children).forEach(c => c.dataset.manualLeader = "false");
+            if (!isCurrentlyManual) card.dataset.manualLeader = "true";
+            updateAllStats();
+        }
+
+        function updateAllStats() {
+            const buoyCount = parseInt(document.getElementById('buoyCount').value);
+            const maxCapacity = parseInt(document.getElementById('maxCapacity').value);
+            
+            for (let i = 1; i <= buoyCount; i++) {
+                const list = document.getElementById(`buoy-list-${i}`);
+                if (!list) continue;
+                const cards = Array.from(list.children);
+                const count = cards.length;
+                const statsDiv = document.getElementById(`stats-${i}`);
+                
+                statsDiv.textContent = `${count} / ${maxCapacity} 人`;
+                statsDiv.className = `buoy-stats ${count > maxCapacity ? 'over-limit' : ''}`;
+                
+                // 重置所有星星狀態
+                cards.forEach(c => { c.classList.remove('is-auto-leader'); c.classList.remove('is-manual-leader'); });
+                
+                // 計算誰該亮燈
+                if (count > 0) {
+                    const manualLeader = cards.find(c => c.dataset.manualLeader === "true");
+                    if (manualLeader) {
+                        manualLeader.classList.add('is-manual-leader'); // 紅星
+                    } else {
+                        const maxRank = Math.max(...cards.map(c => parseInt(c.dataset.rank)));
+                        const autoLeader = cards.find(c => parseInt(c.dataset.rank) === maxRank);
+                        if(autoLeader) autoLeader.classList.add('is-auto-leader'); // 黃星
+                    }
+                }
+            }
+        }
+
+        function allowDrop(ev) { ev.preventDefault(); const buoy = ev.target.closest('.buoy'); if(buoy) buoy.classList.add('drag-over'); }
+        document.addEventListener('dragleave', function(ev) { if (ev.target.classList && ev.target.classList.contains('buoy')) { ev.target.classList.remove('drag-over'); }});
+        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+        function drop(ev) {
+            ev.preventDefault(); document.querySelectorAll('.buoy').forEach(b => b.classList.remove('drag-over'));
+            var data = ev.dataTransfer.getData("text"); var draggedElement = document.getElementById(data);
+            let target = ev.target; while (target && !target.classList.contains('diver-list')) target = target.parentElement;
+            if (target) { target.appendChild(draggedElement); updateAllStats(); }
+        }
+        function showMobileMenu(btn) {
+            const card = btn.closest('.diver-card');
+            const buoyCount = parseInt(document.getElementById('buoyCount').value);
+            let options = [`\n- 待分配區 (輸入 0)`];
+            for(let i=1; i<=buoyCount; i++) options.push(`- 浮球 ${i} (輸入 ${i})`);
+            const choice = prompt(`將 ${card.dataset.name} 移動到哪裡？\n請輸入數字：${options.join('')}`);
+            if (choice !== null) {
+                let targetId = (choice === '0') ? 'pool' : `buoy-list-${parseInt(choice)}`;
+                const target = document.getElementById(targetId);
+                if (target) { target.appendChild(card); updateAllStats(); }
+            }
+        }
+    </script>
+</body>
+</html>
