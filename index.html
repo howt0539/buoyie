@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自由潛水分配 v13.0</title>
+    <title>自由潛水分配 v14.0 (按鈕微調版)</title>
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -33,7 +33,7 @@
 
         h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
 
-        /* 按鈕樣式 */
+        /* 通用按鈕樣式 */
         button {
             padding: 10px 14px;
             border: none;
@@ -69,14 +69,59 @@
         }
 
         .control-group { display: flex; align-items: center; gap: 8px; }
-        input[type="number"] {
-            padding: 8px; border-radius: 6px; border: 1px solid var(--border);
-            width: 60px; text-align: center; font-size: 16px;
-        }
+        
         select.logic-select {
             padding: 8px; border-radius: 6px; border: 1px solid var(--border);
-            font-size: 16px; background-color: #fff; cursor: pointer;
+            font-size: 16px; background-color: #fff; cursor: pointer; height: 40px;
         }
+
+        /* --- 客製化數字輸入框 (Stepper) --- */
+        .stepper {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .stepper input {
+            border: none;
+            width: 50px;
+            text-align: center;
+            font-size: 16px;
+            padding: 0;
+            height: 38px;
+            /* 隱藏預設箭頭 */
+            -moz-appearance: textfield;
+        }
+        .stepper input::-webkit-outer-spin-button,
+        .stepper input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .stepper-btns {
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+        }
+        .stepper-btn {
+            width: 24px;
+            height: 19px;
+            background: #f8f9fa;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 10px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+        }
+        .stepper-btn:last-child { border-bottom: none; }
+        .stepper-btn:hover { background: #e2e6ea; }
+        .stepper-btn:active { background: #dae0e5; }
+        /* -------------------------------- */
 
         /* 浮球區域 */
         .buoy-container {
@@ -163,48 +208,58 @@
         .btn-move-pool { grid-column: 1 / -1; background-color: #fff3e0; border-color: #ffb74d; color: #e65100; }
         .btn-move-buoy { background-color: #f8f9fa; }
 
-        /* 待分配區樣式確保保留 */
         #unassigned-area {
-            display: block; /* 確保顯示 */
+            display: block; 
             background: #fff3e0; 
             border: 2px dashed #ffb74d; 
             margin-bottom: 20px;
             padding: 15px; 
             border-radius: 12px;
-            min-height: 80px; /* 增加最小高度確保有存在感 */
+            min-height: 80px; 
         }
         #unassigned-area .diver-list { 
-            display: flex; 
-            flex-wrap: wrap; 
-            gap: 10px; 
-            padding: 0; 
-            min-height: 60px; /* 列表區域也給高度 */
+            display: flex; flex-wrap: wrap; gap: 10px; padding: 0; min-height: 60px; 
         }
 
     </style>
 </head>
 <body>
 
-    <h1>自由潛水分配 v13.0</h1>
+    <h1>自由潛水分配 v14.0</h1>
 
     <div class="controls">
         <button class="btn-manage" type="button" onclick="openManager()">⚙️ 編輯人員</button>
         <div class="control-group">
             <label>模式:</label>
             <select id="assignLogic" class="logic-select">
-                <option value="balance" selected>⚖️ 平均分配 (強弱平均)</option>
-                <option value="group">💎 能力分組 (強強一組)</option>
-                <option value="random">🎲 隨機分配 (大亂鬥)</option>
+                <option value="balance" selected>⚖️ 平均分配</option>
+                <option value="group">💎 能力分組</option>
+                <option value="random">🎲 隨機分配</option>
             </select>
         </div>
+        
         <div class="control-group">
             <label>球數:</label>
-            <input type="number" id="buoyCount" value="4" min="1" max="20" onchange="adjustBuoyCount()">
+            <div class="stepper">
+                <input type="number" id="buoyCount" value="4" min="1" max="20" onchange="adjustBuoyCount()">
+                <div class="stepper-btns">
+                    <button class="stepper-btn" onclick="stepValue('buoyCount', 1)">▲</button>
+                    <button class="stepper-btn" onclick="stepValue('buoyCount', -1)">▼</button>
+                </div>
+            </div>
         </div>
+
         <div class="control-group">
             <label>上限:</label>
-            <input type="number" id="maxCapacity" value="4" min="1" max="10" onchange="updateAllStats()">
+            <div class="stepper">
+                <input type="number" id="maxCapacity" value="4" min="1" max="10" onchange="updateAllStats()">
+                <div class="stepper-btns">
+                    <button class="stepper-btn" onclick="stepValue('maxCapacity', 1)">▲</button>
+                    <button class="stepper-btn" onclick="stepValue('maxCapacity', -1)">▼</button>
+                </div>
+            </div>
         </div>
+
         <button class="btn-primary" type="button" onclick="autoAssign()">自動分配</button>
         <div style="display:flex; gap:5px;">
             <button class="btn-info" type="button" onclick="openExport()">📋 輸出</button>
@@ -320,7 +375,22 @@
         }
         function saveDivers() { localStorage.setItem('freediving_divers_v12', JSON.stringify(divers)); }
 
-        // --- 分配核心邏輯 ---
+        // --- v14 新增：數值微調功能 ---
+        function stepValue(id, delta) {
+            const input = document.getElementById(id);
+            let val = parseInt(input.value) || 0;
+            const min = parseInt(input.min) || 1;
+            const max = parseInt(input.max) || 20;
+            
+            let newVal = val + delta;
+            if (newVal >= min && newVal <= max) {
+                input.value = newVal;
+                // 手動觸發 change 事件以執行對應的邏輯 (adjustBuoyCount 或 updateAllStats)
+                input.onchange(); 
+            }
+        }
+
+        // --- 分配核心 ---
         function autoAssign() {
             const pool = document.getElementById('pool');
             const buoys = document.querySelectorAll('.buoy-list');
