@@ -3,235 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自由潛水分配 v14.0 (按鈕微調版)</title>
+    <title>自由潛水分配 v15.0 (連線成功版)</title>
     <style>
-        :root {
-            --bg-color: #f0f4f8;
-            --card-bg: #ffffff;
-            --primary: #007bff;
-            --danger: #dc3545;
-            --success: #28a745;
-            --info: #17a2b8;
-            --warning: #ffc107;
-            --purple: #6f42c1;
-            --border: #dfe3e8;
-            --coach-color: #ffebee; --coach-border: #ef9a9a;
-            --high-color: #e8eaf6; --high-border: #9fa8da;
-            --mid-color: #e3f2fd; --mid-border: #90caf9;
-            --low-color: #e0f2f1; --low-border: #80cbc4;
-            --newbie-color: #f5f5f5; --newbie-border: #bdbdbd;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 20px;
-            color: #333;
-            overscroll-behavior-y: contain;
-        }
-
+        /* --- 樣式設定 (與 v14 相同) --- */
+        :root { --bg-color: #f0f4f8; --card-bg: #ffffff; --primary: #007bff; --danger: #dc3545; --success: #28a745; --info: #17a2b8; --warning: #ffc107; --purple: #6f42c1; --border: #dfe3e8; --coach-color: #ffebee; --coach-border: #ef9a9a; --high-color: #e8eaf6; --high-border: #9fa8da; --mid-color: #e3f2fd; --mid-border: #90caf9; --low-color: #e0f2f1; --low-border: #80cbc4; --newbie-color: #f5f5f5; --newbie-border: #bdbdbd; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: #333; overscroll-behavior-y: contain; }
         h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
-
-        /* 通用按鈕樣式 */
-        button {
-            padding: 10px 14px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: opacity 0.2s;
-            font-size: 14px;
-            -webkit-user-select: none;
-            user-select: none;
-        }
+        button { padding: 10px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; font-size: 14px; -webkit-user-select: none; user-select: none; }
         button:hover { opacity: 0.9; }
-        .btn-primary { background-color: var(--primary); color: white; }
-        .btn-success { background-color: var(--success); color: white; }
-        .btn-danger { background-color: var(--danger); color: white; }
-        .btn-info { background-color: var(--info); color: white; }
-        .btn-purple { background-color: var(--purple); color: white; }
-        .btn-reset { background-color: #6c757d; color: white; }
-        .btn-manage { background-color: #2c3e50; color: white; margin-right: 10px; }
-
-        /* 控制面板 */
-        .controls {
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
+        .btn-primary { background-color: var(--primary); color: white; } .btn-success { background-color: var(--success); color: white; } .btn-danger { background-color: var(--danger); color: white; } .btn-info { background-color: var(--info); color: white; } .btn-purple { background-color: var(--purple); color: white; } .btn-reset { background-color: #6c757d; color: white; } .btn-manage { background-color: #2c3e50; color: white; margin-right: 10px; }
+        .controls { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: center; margin-bottom: 20px; }
         .control-group { display: flex; align-items: center; gap: 8px; }
-        
-        select.logic-select {
-            padding: 8px; border-radius: 6px; border: 1px solid var(--border);
-            font-size: 16px; background-color: #fff; cursor: pointer; height: 40px;
-        }
-
-        /* --- 客製化數字輸入框 (Stepper) --- */
-        .stepper {
-            display: flex;
-            align-items: center;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            overflow: hidden;
-            background: #fff;
-        }
-        .stepper input {
-            border: none;
-            width: 50px;
-            text-align: center;
-            font-size: 16px;
-            padding: 0;
-            height: 38px;
-            /* 隱藏預設箭頭 */
-            -moz-appearance: textfield;
-        }
-        .stepper input::-webkit-outer-spin-button,
-        .stepper input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        .stepper-btns {
-            display: flex;
-            flex-direction: column;
-            border-left: 1px solid var(--border);
-        }
-        .stepper-btn {
-            width: 24px;
-            height: 19px;
-            background: #f8f9fa;
-            border: none;
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            font-size: 10px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #555;
-        }
-        .stepper-btn:last-child { border-bottom: none; }
-        .stepper-btn:hover { background: #e2e6ea; }
-        .stepper-btn:active { background: #dae0e5; }
-        /* -------------------------------- */
-
-        /* 浮球區域 */
-        .buoy-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            padding-bottom: 50px;
-        }
-        .buoy {
-            background: var(--card-bg); border-radius: 12px;
-            border: 2px solid transparent;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            display: flex; flexDirection: column; overflow: hidden;
-            transition: all 0.2s;
-        }
+        select.logic-select { padding: 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 16px; background-color: #fff; cursor: pointer; height: 40px; }
+        .stepper { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: #fff; }
+        .stepper input { border: none; width: 50px; text-align: center; font-size: 16px; padding: 0; height: 38px; -moz-appearance: textfield; }
+        .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .stepper-btns { display: flex; flex-direction: column; border-left: 1px solid var(--border); }
+        .stepper-btn { width: 24px; height: 19px; background: #f8f9fa; border: none; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 10px; padding: 0; display: flex; align-items: center; justify-content: center; color: #555; }
+        .stepper-btn:last-child { border-bottom: none; } .stepper-btn:hover { background: #e2e6ea; } .stepper-btn:active { background: #dae0e5; }
+        .buoy-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding-bottom: 50px; }
+        .buoy { background: var(--card-bg); border-radius: 12px; border: 2px solid transparent; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flexDirection: column; overflow: hidden; transition: all 0.2s; }
         .buoy.drag-over { border-color: var(--primary); background-color: #f0f7ff; }
         .buoy-header { background: #2c3e50; color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
         .buoy-stats { padding: 8px 12px; background: #ecf0f1; font-size: 0.9em; text-align: right; border-bottom: 1px solid var(--border); }
         .buoy-stats.over-limit { color: #c62828; font-weight: bold; background: #ffcdd2; }
         .diver-list { padding: 10px; min-height: 100px; flex-grow: 1; }
-
-        /* 潛水員卡片 */
-        .diver-card {
-            padding: 12px 10px;
-            margin-bottom: 8px; border-radius: 8px; border: 1px solid #ccc;
-            cursor: grab; display: flex; justify-content: space-between; align-items: center;
-            user-select: none; position: relative;
-            touch-action: none;
-        }
+        .diver-card { padding: 12px 10px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #ccc; cursor: grab; display: flex; justify-content: space-between; align-items: center; user-select: none; position: relative; touch-action: none; }
         .diver-card:active { cursor: grabbing; transform: scale(1.02); }
-        
-        .rank-5 { background: var(--coach-color); border-color: var(--coach-border); }
-        .rank-4 { background: var(--high-color); border-color: var(--high-border); }
-        .rank-3 { background: var(--mid-color); border-color: var(--mid-border); }
-        .rank-2 { background: var(--low-color); border-color: var(--low-border); }
-        .rank-1 { background: var(--newbie-color); border-color: var(--newbie-border); color: #666; } 
-        
-        .diver-info { 
-            display: flex; align-items: center; gap: 8px; 
-            white-space: nowrap; 
-            overflow: hidden;
-        }
-        
-        .leader-icon { cursor: pointer; font-size: 1.4em; color: #ccc; padding: 0 5px; }
-        .is-auto-leader .leader-icon { color: #f1c40f; }
-        .is-manual-leader .leader-icon { color: #ff5722; text-shadow: 0 0 2px rgba(0,0,0,0.2); }
-
-        .mobile-move { display: none; font-size: 0.9em; padding: 5px 10px; background:rgba(0,123,255,0.1); border-radius:4px; color: #007bff; cursor: pointer; margin-left: auto; white-space: nowrap;}
-        @media (max-width: 768px) { .mobile-move { display: block; } }
-
-        /* Modal */
-        .modal { 
-            display: none; position: fixed; z-index: 9999; left: 0; top: 0; 
-            width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);
-            align-items: center; justify-content: center;
-        }
-        
-        .modal-content { 
-            background-color: #fefefe; padding: 20px; border: 1px solid #888; 
-            width: 90%; max-width: 600px; border-radius: 12px; position: relative; 
-            max-height: 85vh; display: flex; flex-direction: column;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
-
-        .close { 
-            color: #aaa; position: absolute; right: 15px; top: 10px;
-            font-size: 36px; font-weight: bold; cursor: pointer; z-index: 10; padding: 5px;
-        }
-        .close:hover { color: #000; }
-        
-        .manage-section { flex-grow: 1; overflow-y: auto; border-bottom: 2px solid #eee; margin-bottom: 15px; padding-bottom: 10px;}
-        .manage-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; border-bottom: 1px solid #eee; }
-        .manage-item:nth-child(even) { background-color: #fafafa; }
-        .batch-add { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 15px;}
-        .batch-add textarea { width: 100%; height: 80px; margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #90caf9; box-sizing: border-box; font-family: monospace; }
-        .single-add { display: flex; gap: 10px; flex-wrap: wrap; background: #f9f9f9; padding: 10px; border-radius: 6px; }
-        .single-add input, .single-add select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; flex-grow: 1; min-width: 100px;}
-        
+        .rank-5 { background: var(--coach-color); border-color: var(--coach-border); } .rank-4 { background: var(--high-color); border-color: var(--high-border); } .rank-3 { background: var(--mid-color); border-color: var(--mid-border); } .rank-2 { background: var(--low-color); border-color: var(--low-border); } .rank-1 { background: var(--newbie-color); border-color: var(--newbie-border); color: #666; }
+        .diver-info { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; }
+        .leader-icon { cursor: pointer; font-size: 1.4em; color: #ccc; padding: 0 5px; } .is-auto-leader .leader-icon { color: #f1c40f; } .is-manual-leader .leader-icon { color: #ff5722; text-shadow: 0 0 2px rgba(0,0,0,0.2); }
+        .mobile-move { display: none; font-size: 0.9em; padding: 5px 10px; background:rgba(0,123,255,0.1); border-radius:4px; color: #007bff; cursor: pointer; margin-left: auto; white-space: nowrap;} @media (max-width: 768px) { .mobile-move { display: block; } }
+        .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background-color: #fefefe; padding: 20px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 12px; position: relative; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .close { color: #aaa; position: absolute; right: 15px; top: 10px; font-size: 36px; font-weight: bold; cursor: pointer; z-index: 10; padding: 5px; } .close:hover { color: #000; }
+        .manage-section { flex-grow: 1; overflow-y: auto; border-bottom: 2px solid #eee; margin-bottom: 15px; padding-bottom: 10px;} .manage-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; border-bottom: 1px solid #eee; } .manage-item:nth-child(even) { background-color: #fafafa; }
+        .batch-add { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 15px;} .batch-add textarea { width: 100%; height: 80px; margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #90caf9; box-sizing: border-box; font-family: monospace; }
+        .single-add { display: flex; gap: 10px; flex-wrap: wrap; background: #f9f9f9; padding: 10px; border-radius: 6px; } .single-add input, .single-add select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; flex-grow: 1; min-width: 100px;}
         textarea.result-box { width: 100%; height: 250px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: monospace; line-height: 1.5; resize: none; margin-bottom: 10px; box-sizing: border-box;}
-        
         .move-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; overflow-y: auto; max-height: 60vh; }
-        .btn-move-option { padding: 15px; font-size: 16px; border: 2px solid var(--border); border-radius: 8px; background: #fff; color: #333; text-align: center; font-weight: bold; transition: all 0.2s; }
-        .btn-move-option:active { background: #e0e0e0; transform: scale(0.98); }
-        .btn-move-pool { grid-column: 1 / -1; background-color: #fff3e0; border-color: #ffb74d; color: #e65100; }
-        .btn-move-buoy { background-color: #f8f9fa; }
-
-        #unassigned-area {
-            display: block; 
-            background: #fff3e0; 
-            border: 2px dashed #ffb74d; 
-            margin-bottom: 20px;
-            padding: 15px; 
-            border-radius: 12px;
-            min-height: 80px; 
-        }
-        #unassigned-area .diver-list { 
-            display: flex; flex-wrap: wrap; gap: 10px; padding: 0; min-height: 60px; 
-        }
-
+        .btn-move-option { padding: 15px; font-size: 16px; border: 2px solid var(--border); border-radius: 8px; background: #fff; color: #333; text-align: center; font-weight: bold; transition: all 0.2s; } .btn-move-option:active { background: #e0e0e0; transform: scale(0.98); }
+        .btn-move-pool { grid-column: 1 / -1; background-color: #fff3e0; border-color: #ffb74d; color: #e65100; } .btn-move-buoy { background-color: #f8f9fa; }
+        #unassigned-area { display: block; background: #fff3e0; border: 2px dashed #ffb74d; margin-bottom: 20px; padding: 15px; border-radius: 12px; min-height: 80px; }
+        #unassigned-area .diver-list { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; min-height: 60px; }
+        /* 同步狀態指示燈 */
+        #sync-status { text-align: center; font-size: 0.8em; margin-top: -10px; margin-bottom: 10px; font-weight: bold; color: #666; }
+        .status-live { color: #28a745; }
+        .status-offline { color: #dc3545; }
     </style>
 </head>
 <body>
 
-    <h1>自由潛水分配 v14.0</h1>
+    <h1>自由潛水分配 v15.0</h1>
+    <div id="sync-status">🔵 連線初始化中...</div>
 
     <div class="controls">
         <button class="btn-manage" type="button" onclick="openManager()">⚙️ 編輯人員</button>
         <div class="control-group">
             <label>模式:</label>
-            <select id="assignLogic" class="logic-select">
+            <select id="assignLogic" class="logic-select" onchange="pushSettings()">
                 <option value="balance" selected>⚖️ 平均分配</option>
                 <option value="group">💎 能力分組</option>
                 <option value="random">🎲 隨機分配</option>
@@ -241,7 +71,7 @@
         <div class="control-group">
             <label>球數:</label>
             <div class="stepper">
-                <input type="number" id="buoyCount" value="4" min="1" max="20" onchange="adjustBuoyCount()">
+                <input type="number" id="buoyCount" value="4" min="1" max="20" onchange="pushSettings()">
                 <div class="stepper-btns">
                     <button class="stepper-btn" onclick="stepValue('buoyCount', 1)">▲</button>
                     <button class="stepper-btn" onclick="stepValue('buoyCount', -1)">▼</button>
@@ -252,7 +82,7 @@
         <div class="control-group">
             <label>上限:</label>
             <div class="stepper">
-                <input type="number" id="maxCapacity" value="4" min="1" max="10" onchange="updateAllStats()">
+                <input type="number" id="maxCapacity" value="4" min="1" max="10" onchange="pushSettings()">
                 <div class="stepper-btns">
                     <button class="stepper-btn" onclick="stepValue('maxCapacity', 1)">▲</button>
                     <button class="stepper-btn" onclick="stepValue('maxCapacity', -1)">▼</button>
@@ -260,10 +90,9 @@
             </div>
         </div>
 
-        <button class="btn-primary" type="button" onclick="autoAssign()">自動分配</button>
+        <button class="btn-primary" type="button" onclick="triggerAutoAssign()">自動分配</button>
         <div style="display:flex; gap:5px;">
             <button class="btn-info" type="button" onclick="openExport()">📋 輸出</button>
-            <button class="btn-purple" type="button" onclick="openRestore()">📥 讀取</button>
         </div>
     </div>
 
@@ -301,7 +130,6 @@
                         <option value="Newbie|1">Newbie / 無證</option>
                     </select>
                     <button class="btn-success" type="button" onclick="addNewPerson()" style="flex-grow:2">新增</button>
-                    <button class="btn-reset" type="button" onclick="restoreDefault()" style="flex-grow:1">重置範例</button>
                 </div>
             </div>
         </div>
@@ -319,19 +147,6 @@
         </div>
     </div>
 
-    <div id="restoreModal" class="modal">
-        <div class="modal-content" style="max-height: 600px;">
-            <span class="close" onclick="closeModal('restoreModal')">&times;</span>
-            <h2 style="margin-top:0;">讀取配置</h2>
-            <div style="font-size:0.9em; color:#666; margin-bottom:5px;">請將之前的輸出結果完整貼上：</div>
-            <textarea id="restoreInput" class="result-box" placeholder="在此貼上您之前複製的分配表..."></textarea>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-purple" onclick="restoreFromText()" style="flex:2;">解析並還原</button>
-                <button class="btn-reset" onclick="closeModal('restoreModal')" style="flex:1;">取消</button>
-            </div>
-        </div>
-    </div>
-
     <div id="moveModal" class="modal">
         <div class="modal-content" style="max-width: 400px;">
             <span class="close" onclick="closeModal('moveModal')">&times;</span>
@@ -340,240 +155,89 @@
         </div>
     </div>
 
-    <script>
-        const defaultDivers = [
-            { name: "教練A", role: "教練", rank: 5 }, { name: "教練B", role: "教練", rank: 5 }, 
-            { name: "助教C", role: "W3", rank: 4 }, { name: "學員D", role: "A3", rank: 3 },
-            { name: "學員E", role: "A3", rank: 3 }, { name: "學員F", role: "W2", rank: 3 },
-            { name: "學員G", role: "A2", rank: 2 }, { name: "學員H", role: "A2", rank: 2 },
-            { name: "學員I", role: "Newbie", rank: 1 }, { name: "學員J", role: "Newbie", rank: 1 }, 
-            { name: "學員K", role: "A2", rank: 2 }, { name: "學員L", role: "W2", rank: 3 }
-        ];
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        let divers = [];
-        let currentMovingCardId = null;
-
-        window.onload = function() { 
-            loadDivers(); 
-            const buoyCount = parseInt(document.getElementById('buoyCount').value);
-            const container = document.getElementById('buoyContainer');
-            container.innerHTML = '';
-            for(let i=1; i<=buoyCount; i++) createBuoyHTML(i, container);
-            
-            const pool = document.getElementById('pool');
-            if (pool.children.length === 0 && divers.length > 0) {
-                divers.forEach(diver => pool.appendChild(createDiverCard(diver)));
-            }
-            if (divers.length > 0 && container.children.length > 0 && document.querySelectorAll('.buoy-list .diver-card').length === 0) {
-                 autoAssign();
-            }
+        // 🔥 使用者提供的設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyCOcefBJVKltX5JxBqr22WY_UnW94RI05o",
+            authDomain: "buoy-0539.firebaseapp.com",
+            projectId: "buoy-0539",
+            storageBucket: "buoy-0539.firebasestorage.app",
+            messagingSenderId: "60345079824",
+            appId: "1:60345079824:web:cf55992050f8731eb49295",
+            measurementId: "G-BVHFW88868"
         };
 
-        function loadDivers() {
-            const saved = localStorage.getItem('freediving_divers_v12'); 
-            divers = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultDivers));
-        }
-        function saveDivers() { localStorage.setItem('freediving_divers_v12', JSON.stringify(divers)); }
-
-        // --- v14 新增：數值微調功能 ---
-        function stepValue(id, delta) {
-            const input = document.getElementById(id);
-            let val = parseInt(input.value) || 0;
-            const min = parseInt(input.min) || 1;
-            const max = parseInt(input.max) || 20;
-            
-            let newVal = val + delta;
-            if (newVal >= min && newVal <= max) {
-                input.value = newVal;
-                // 手動觸發 change 事件以執行對應的邏輯 (adjustBuoyCount 或 updateAllStats)
-                input.onchange(); 
-            }
+        let app, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+            document.getElementById('sync-status').innerText = "🟢 雲端連線成功";
+            document.getElementById('sync-status').className = "status-live";
+        } catch (e) {
+            console.error(e);
+            document.getElementById('sync-status').innerText = "🔴 連線失敗";
+            document.getElementById('sync-status').className = "status-offline";
         }
 
-        // --- 分配核心 ---
-        function autoAssign() {
-            const pool = document.getElementById('pool');
-            const buoys = document.querySelectorAll('.buoy-list');
-            
-            buoys.forEach(list => { while(list.firstChild) pool.appendChild(list.firstChild); });
-            let allCards = Array.from(pool.children);
-            allCards.forEach(card => card.dataset.manualLeader = "false");
-
-            const logic = document.getElementById('assignLogic').value;
-            const buoyCount = parseInt(document.getElementById('buoyCount').value);
-            const maxCapacity = parseInt(document.getElementById('maxCapacity').value);
-
-            if (logic === 'random') {
-                for (let i = allCards.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [allCards[i], allCards[j]] = [allCards[j], allCards[i]];
-                }
-            } else {
-                allCards.sort((a, b) => parseInt(b.dataset.rank) - parseInt(a.dataset.rank));
-            }
-            allCards.forEach(card => pool.appendChild(card));
-
-            if (logic === 'group') {
-                let currentBuoyIndex = 1;
-                allCards.forEach(card => {
-                    let list = document.getElementById(`buoy-list-${currentBuoyIndex}`);
-                    while (list && list.children.length >= maxCapacity && currentBuoyIndex < buoyCount) {
-                        currentBuoyIndex++;
-                        list = document.getElementById(`buoy-list-${currentBuoyIndex}`);
+        // --- 全域變數 ---
+        window.divers = [];
+        window.settings = { buoyCount: 4, maxCapacity: 4, logic: 'balance' };
+        
+        window.pushDivers = pushDivers;
+        window.pushSettings = pushSettings;
+        window.triggerAutoAssign = triggerAutoAssign;
+        window.batchImport = batchImport;
+        window.addNewPerson = addNewPerson;
+        window.clearAll = clearAll;
+        window.deletePerson = deletePerson;
+        window.stepValue = stepValue;
+        window.drop = drop;
+        window.allowDrop = allowDrop;
+        window.drag = drag;
+        window.toggleLeader = toggleLeader;
+        window.showMobileMenu = showMobileMenu;
+        window.executeMove = executeMove;
+        
+        // --- 核心：監聽雲端資料 (Read) ---
+        if(db) {
+            const dataRef = ref(db, 'freediving_data');
+            onValue(dataRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    if (data.settings) {
+                        window.settings = data.settings;
+                        document.getElementById('buoyCount').value = window.settings.buoyCount;
+                        document.getElementById('maxCapacity').value = window.settings.maxCapacity;
+                        document.getElementById('assignLogic').value = window.settings.logic;
                     }
-                    if(list && list.children.length < maxCapacity) {
-                        list.appendChild(card);
+                    if (data.divers) {
+                        window.divers = data.divers;
+                        renderUIFromCloud();
+                    } else {
+                        window.divers = [];
+                        renderUIFromCloud();
                     }
-                });
-            } else {
-                allCards.forEach((card, index) => {
-                    let placed = false;
-                    let startNode = (index % buoyCount) + 1;
-                    for (let i = 0; i < buoyCount; i++) {
-                        let targetBuoy = ((startNode + i - 1) % buoyCount) + 1;
-                        let list = document.getElementById(`buoy-list-${targetBuoy}`);
-                        if (list && list.children.length < maxCapacity) {
-                            list.appendChild(card);
-                            placed = true;
-                            break;
-                        }
-                    }
-                });
-            }
-            updateAllStats();
-        }
-
-        // --- 其他功能 ---
-        function openManager() { document.getElementById('managerModal').style.display = 'flex'; renderManageList(); }
-        function openExport() { document.getElementById('exportModal').style.display = 'flex'; generateExportText(); }
-        function openRestore() { document.getElementById('restoreModal').style.display = 'flex'; document.getElementById('restoreInput').value = ''; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        window.onclick = function(event) { if (event.target.classList.contains('modal')) event.target.style.display = 'none'; }
-
-        function restoreFromText() {
-            const text = document.getElementById('restoreInput').value.trim();
-            if(!text) { alert("請輸入內容"); return; }
-            const lines = text.split('\n');
-            let tempDivers = []; let placements = []; let currentTarget = 'pool'; let maxBuoyFound = 0;
-            lines.forEach(line => {
-                line = line.trim(); if (!line) return;
-                const buoyMatch = line.match(/【浮球 #(\d+)】/);
-                if (buoyMatch) { const bId = parseInt(buoyMatch[1]); currentTarget = `buoy-list-${bId}`; if (bId > maxBuoyFound) maxBuoyFound = bId; return; }
-                if (line.includes('待分配區')) { currentTarget = 'pool'; return; }
-                if (line.includes('🌊') || line.includes('---') || line.includes('目前沒有分配')) return;
-                const diverMatch = line.match(/^([⭐\s]*)(.+?)\s*\((.+)\)$/);
-                if (diverMatch) {
-                    const prefix = diverMatch[1]; const name = diverMatch[2].trim(); const roleRaw = diverMatch[3].trim(); const isMan = prefix.includes('⭐');
-                    let rank = 1; let role = roleRaw;
-                    if (roleRaw.toLowerCase() === 'newbie' || roleRaw === '無證') { role = 'Newbie'; rank = 1; } 
-                    else { let ur = roleRaw.toUpperCase(); if (ur.includes('教練')) rank = 5; else if (ur === 'A4' || ur === 'W3') rank = 4; else if (ur === 'A3' || ur === 'W2') rank = 3; else if (ur === 'A2' || ur === 'W1') rank = 2; }
-                    tempDivers.push({ name, role, rank }); placements.push({ name, target: currentTarget, isLeader: isMan });
+                } else {
+                    pushSettings();
+                    pushDivers();
                 }
             });
-            if (tempDivers.length === 0) { alert("無法解析"); return; }
-            if(confirm(`解析成功！共 ${tempDivers.length} 人，確定還原？`)) {
-                divers = tempDivers; saveDivers();
-                let currentBuoyInput = parseInt(document.getElementById('buoyCount').value);
-                if (maxBuoyFound > currentBuoyInput) document.getElementById('buoyCount').value = maxBuoyFound;
-                const container = document.getElementById('buoyContainer'); container.innerHTML = '';
-                const finalBuoyCount = parseInt(document.getElementById('buoyCount').value);
-                for(let i=1; i<=finalBuoyCount; i++) createBuoyHTML(i, container);
-                const pool = document.getElementById('pool'); pool.innerHTML = '';
-                placements.forEach(p => {
-                    const d = divers.find(x => x.name === p.name);
-                    if(d) {
-                        const card = createDiverCard(d); if(p.isLeader) card.dataset.manualLeader = "true";
-                        const t = document.getElementById(p.target); if(t) t.appendChild(card); else pool.appendChild(card);
-                    }
-                });
-                updateAllStats(); closeModal('restoreModal'); alert("還原完成！");
-            }
         }
 
-        function showMobileMenu(btn) {
-            const card = btn.closest('.diver-card'); currentMovingCardId = card.id;
-            document.getElementById('moveTargetName').innerText = `移動：${card.dataset.name}`;
-            const container = document.getElementById('moveOptions'); container.innerHTML = '';
-            const poolBtn = document.createElement('button'); poolBtn.className = 'btn-move-option btn-move-pool'; poolBtn.innerText = '🏠 待分配區'; poolBtn.onclick = () => executeMove('pool'); container.appendChild(poolBtn);
-            const buoyCount = parseInt(document.getElementById('buoyCount').value);
-            for(let i=1; i<=buoyCount; i++) {
-                const btn = document.createElement('button'); btn.className = 'btn-move-option btn-move-buoy';
-                const currentCount = document.getElementById(`buoy-list-${i}`).children.length; const maxCapacity = document.getElementById('maxCapacity').value;
-                btn.innerHTML = `浮球 #${i} <br><span style="font-size:0.8em; color:#666">(${currentCount}/${maxCapacity})</span>`;
-                btn.onclick = () => executeMove(`buoy-list-${i}`); container.appendChild(btn);
-            }
-            document.getElementById('moveModal').style.display = 'flex';
+        // --- 核心：寫入雲端 (Write) ---
+        function pushDivers() {
+            if(!db) return;
+            set(ref(db, 'freediving_data/divers'), window.divers);
         }
-        function executeMove(targetId) { const card = document.getElementById(currentMovingCardId); const target = document.getElementById(targetId); if(card && target) { target.appendChild(card); updateAllStats(); } closeModal('moveModal'); }
 
-        function batchImport() {
-            const rawText = document.getElementById('batchInput').value.trim(); if (!rawText) return;
-            const regex = /(教練|W[1-3]|A[1-4]|Newbie|無證)\s+([^\s]+)/gi; let processText = rawText.replace(/[:：]/g, ' '); let match; let addedCount = 0; const pool = document.getElementById('pool');
-            while ((match = regex.exec(processText)) !== null) {
-                let roleRaw = match[1]; const nameRaw = match[2].trim(); let rank = 1; let role = roleRaw;
-                if (roleRaw.toLowerCase() === 'newbie' || roleRaw === '無證') { role = 'Newbie'; rank = 1; } 
-                else { role = roleRaw.toUpperCase(); if (role.includes('教練')) rank = 5; else if (role === 'A4' || role === 'W3') rank = 4; else if (role === 'A3' || role === 'W2') rank = 3; else if (role === 'A2' || role === 'W1') rank = 2; }
-                if (!divers.some(d => d.name === nameRaw)) { const newDiver = { name: nameRaw, role: role, rank: rank }; divers.push(newDiver); pool.appendChild(createDiverCard(newDiver)); addedCount++; }
-            }
-            saveDivers(); renderManageList(); updateAllStats(); document.getElementById('batchInput').value = ''; if(addedCount > 0) alert(`已匯入 ${addedCount} 人`);
-        }
-        function addNewPerson() {
-            const name = document.getElementById('newName').value.trim(); if(!name || divers.some(d => d.name === name)) { alert("請輸入有效且不重複的姓名"); return; }
-            const [roleName, rankVal] = document.getElementById('newRole').value.split('|'); const newDiver = { name: name, role: roleName, rank: parseInt(rankVal) };
-            divers.push(newDiver); saveDivers(); renderManageList(); document.getElementById('pool').appendChild(createDiverCard(newDiver)); updateAllStats(); document.getElementById('newName').value = '';
-        }
-        function generateExportText() {
-            const buoyCount = parseInt(document.getElementById('buoyCount').value); let output = "🌊 自由潛水浮球分配表 🌊\n\n"; let hasContent = false;
-            for (let i = 1; i <= buoyCount; i++) {
-                const list = document.getElementById(`buoy-list-${i}`); if (!list) continue; const cards = Array.from(list.children); if (cards.length === 0) continue; hasContent = true; output += `【浮球 #${i}】(${cards.length}人)\n`;
-                const manualLeader = cards.find(c => c.dataset.manualLeader === "true"); let leaderCard = manualLeader;
-                if (!leaderCard) { const maxRank = Math.max(...cards.map(c => parseInt(c.dataset.rank))); leaderCard = cards.find(c => parseInt(c.dataset.rank) === maxRank); }
-                cards.forEach(card => { const isLeader = (card === leaderCard); const prefix = isLeader ? "⭐ " : "   "; output += `${prefix}${card.dataset.name} (${card.dataset.role})\n`; }); output += "\n";
-            }
-            const pool = document.getElementById('pool'); if (pool.children.length > 0) { output += `---------------\n⚠️ 待分配區：\n`; Array.from(pool.children).forEach(card => output += `${card.dataset.name} (${card.dataset.role})\n`); }
-            if (!hasContent) output += "(目前沒有分配任何人員)"; document.getElementById('exportText').value = output;
-        }
-        function copyToClipboard() { const t = document.getElementById("exportText"); t.select(); t.setSelectionRange(0, 99999); navigator.clipboard.writeText(t.value).then(()=>alert("已複製")).catch(()=>alert("複製失敗")); }
-        function renderManageList() {
-            const listDiv = document.getElementById('manageList'); document.getElementById('countDisplay').innerText = divers.length; listDiv.innerHTML = '';
-            [...divers].sort((a,b) => b.rank - a.rank).forEach((p) => {
-                const item = document.createElement('div'); item.className = 'manage-item';
-                item.innerHTML = `<div style="display:flex; gap:10px; align-items:center;"><span style="font-weight:bold;">${p.name}</span><span style="background:#eee; padding:2px 6px; border-radius:4px; font-size:0.8em;">${p.role}</span></div><button class="btn-danger" type="button" style="padding:6px 10px;" onclick="deletePerson('${p.name}')">刪除</button>`;
-                listDiv.appendChild(item);
-            });
-        }
-        function deletePerson(name) { if(confirm(`確定刪除 ${name}？`)) { divers = divers.filter(d => d.name !== name); saveDivers(); renderManageList(); const card = document.getElementById(`diver-${name}`); if(card) card.remove(); updateAllStats(); } }
-        function clearAll() { if(confirm("清空全部？")) { divers = []; saveDivers(); renderManageList(); document.getElementById('pool').innerHTML = ''; document.querySelectorAll('.buoy-list').forEach(el => el.innerHTML = ''); updateAllStats(); } }
-        function restoreDefault() { if(confirm("恢復範例名單？")) { divers = JSON.parse(JSON.stringify(defaultDivers)); saveDivers(); renderManageList(); const pool = document.getElementById('pool'); pool.innerHTML = ''; [...divers].sort((a,b) => b.rank - a.rank).forEach(d => pool.appendChild(createDiverCard(d))); document.querySelectorAll('.buoy-list').forEach(list => list.innerHTML = ''); updateAllStats(); } }
-        function adjustBuoyCount() {
-            const newCount = parseInt(document.getElementById('buoyCount').value); const container = document.getElementById('buoyContainer'); const currentCount = container.children.length;
-            if (newCount > currentCount) { for (let i = currentCount + 1; i <= newCount; i++) createBuoyHTML(i, container); } 
-            else if (newCount < currentCount) { const pool = document.getElementById('pool'); for (let i = currentCount; i > newCount; i--) { const list = document.getElementById(`buoy-list-${i}`); while (list.children.length > 0) pool.appendChild(list.children[0]); document.getElementById(`buoy-${i}`).remove(); } }
-            updateAllStats();
-        }
-        function createBuoyHTML(id, container) { const div = document.createElement('div'); div.className = 'buoy'; div.id = `buoy-${id}`; div.innerHTML = `<div class="buoy-header"><span style="font-weight:bold;">浮球 #${id}</span></div><div class="buoy-stats" id="stats-${id}">0 人</div><div class="diver-list buoy-list" id="buoy-list-${id}" ondrop="drop(event)" ondragover="allowDrop(event)" data-buoy-id="${id}"></div>`; container.appendChild(div); }
-        function createDiverCard(diver) {
-            const div = document.createElement('div'); div.className = `diver-card rank-${diver.rank}`; div.draggable = true; div.id = `diver-${diver.name}`; div.dataset.rank = diver.rank; div.dataset.name = diver.name; div.dataset.role = diver.role; div.dataset.manualLeader = "false"; div.ondragstart = drag;
-            div.innerHTML = `<div class="diver-info"><span class="leader-icon" onclick="toggleLeader(this, event)">★</span><strong>${diver.name}</strong><span style="font-size:0.75em; padding:2px 6px; border-radius:4px; background:rgba(0,0,0,0.1); font-weight:bold;">${diver.role}</span></div><span class="mobile-move" onclick="showMobileMenu(this)">移動</span>`;
-            return div;
-        }
-        function toggleLeader(icon, event) {
-            event.stopPropagation(); const card = icon.closest('.diver-card'); const list = card.parentElement; if(list.id === 'pool') { alert("請先將人員移入浮球後再指定球長"); return; }
-            const isMan = card.dataset.manualLeader === "true"; Array.from(list.children).forEach(c => c.dataset.manualLeader = "false"); if (!isMan) card.dataset.manualLeader = "true"; updateAllStats();
-        }
-        function updateAllStats() {
-            const count = parseInt(document.getElementById('buoyCount').value); const max = parseInt(document.getElementById('maxCapacity').value);
-            for (let i = 1; i <= count; i++) {
-                const list = document.getElementById(`buoy-list-${i}`); if (!list) continue; const cards = Array.from(list.children); const len = cards.length;
-                const st = document.getElementById(`stats-${i}`); st.textContent = `${len} / ${max} 人`; st.className = `buoy-stats ${len > max ? 'over-limit' : ''}`;
-                cards.forEach(c => { c.classList.remove('is-auto-leader'); c.classList.remove('is-manual-leader'); });
-                if (len > 0) { const man = cards.find(c => c.dataset.manualLeader === "true"); if (man) man.classList.add('is-manual-leader'); else { const maxR = Math.max(...cards.map(c => parseInt(c.dataset.rank))); const auto = cards.find(c => parseInt(c.dataset.rank) === maxR); if(auto) auto.classList.add('is-auto-leader'); } }
-            }
-        }
-        function allowDrop(ev) { ev.preventDefault(); const b = ev.target.closest('.buoy'); if(b) b.classList.add('drag-over'); }
-        document.addEventListener('dragleave', function(ev) { if (ev.target.classList && ev.target.classList.contains('buoy')) ev.target.classList.remove('drag-over'); });
-        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
-        function drop(ev) { ev.preventDefault(); document.querySelectorAll('.buoy').forEach(b => b.classList.remove('drag-over')); var d = ev.dataTransfer.getData("text"); var el = document.getElementById(d); let t = ev.target; while (t && !t.classList.contains('diver-list')) t = t.parentElement; if (t) { t.appendChild(el); updateAllStats(); } }
-    </script>
-</body>
-</html>
+        function pushSettings() {
+            if(!db) return;
+            window.settings = {
+                buoyCount: parseInt(document.getElementById('buoyCount').value),
+                maxCapacity: parseInt(document.getElementById('maxCapacity').value),
+                logic: document.getElementById('assignLogic').value
+            };
+            update(ref(db, 'freediving_data/settings'), window.
