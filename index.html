@@ -3,10 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自由潛水浮球分配 v14.0</title>
+    
+    <title>Buoyie</title>
     
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="icon" type="image/png" href="apple-touch-icon.png">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Buoyie">
 
     <style>
         :root {
@@ -33,9 +38,29 @@
             padding: 20px;
             color: #333;
             overscroll-behavior-y: contain;
+            /* 讓手機版底部留白，避免被 Home Bar 擋住 */
+            padding-bottom: 40px;
         }
 
-        h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        /* 🔥 主標題樣式更新 */
+        h1 { 
+            text-align: center; 
+            color: #2c3e50; 
+            margin-bottom: 20px; 
+            font-size: 2.2em; /*稍微加大*/
+            letter-spacing: 1px;
+        }
+        
+        /* 在標題下方加一個小小的版本號說明 */
+        h1::after {
+            content: "v14.0 Offline";
+            display: block;
+            font-size: 0.4em;
+            color: #888;
+            margin-top: 5px;
+            font-weight: normal;
+            letter-spacing: 0;
+        }
 
         /* 通用按鈕樣式 */
         button {
@@ -79,7 +104,7 @@
             font-size: 16px; background-color: #fff; cursor: pointer; height: 40px;
         }
 
-        /* --- 客製化數字輸入框 (Stepper) --- */
+        /* Stepper */
         .stepper {
             display: flex;
             align-items: center;
@@ -180,14 +205,12 @@
             width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);
             align-items: center; justify-content: center;
         }
-        
         .modal-content { 
             background-color: #fefefe; padding: 20px; border: 1px solid #888; 
             width: 90%; max-width: 600px; border-radius: 12px; position: relative; 
             max-height: 85vh; display: flex; flex-direction: column;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
-
         .close { 
             color: #aaa; position: absolute; right: 15px; top: 10px;
             font-size: 36px; font-weight: bold; cursor: pointer; z-index: 10; padding: 5px;
@@ -227,7 +250,7 @@
 </head>
 <body>
 
-    <h1>自由潛水分配 v14.0</h1>
+    <h1>Buoyie</h1>
 
     <div class="controls">
         <button class="btn-manage" type="button" onclick="openManager()">⚙️ 編輯人員</button>
@@ -372,7 +395,7 @@
         };
 
         function loadDivers() {
-            const saved = localStorage.getItem('freediving_divers_v14'); // 更新 key
+            const saved = localStorage.getItem('freediving_divers_v14'); 
             divers = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultDivers));
         }
         function saveDivers() { localStorage.setItem('freediving_divers_v14', JSON.stringify(divers)); }
@@ -387,6 +410,7 @@
             let newVal = val + delta;
             if (newVal >= min && newVal <= max) {
                 input.value = newVal;
+                // 手動觸發 change 事件以執行對應的邏輯 (adjustBuoyCount 或 updateAllStats)
                 input.onchange(); 
             }
         }
@@ -537,7 +561,8 @@
         function copyToClipboard() { const t = document.getElementById("exportText"); t.select(); t.setSelectionRange(0, 99999); navigator.clipboard.writeText(t.value).then(()=>alert("已複製")).catch(()=>alert("複製失敗")); }
         function renderManageList() {
             const listDiv = document.getElementById('manageList'); document.getElementById('countDisplay').innerText = divers.length; listDiv.innerHTML = '';
-            [...divers].sort((a,b) => b.rank - a.rank).forEach((p) => {
+            let sorted = [...divers].sort((a,b) => b.rank - a.rank);
+            sorted.forEach((p) => {
                 const item = document.createElement('div'); item.className = 'manage-item';
                 item.innerHTML = `<div style="display:flex; gap:10px; align-items:center;"><span style="font-weight:bold;">${p.name}</span><span style="background:#eee; padding:2px 6px; border-radius:4px; font-size:0.8em;">${p.role}</span></div><button class="btn-danger" type="button" style="padding:6px 10px;" onclick="deletePerson('${p.name}')">刪除</button>`;
                 listDiv.appendChild(item);
@@ -554,7 +579,9 @@
         }
         function createBuoyHTML(id, container) { const div = document.createElement('div'); div.className = 'buoy'; div.id = `buoy-${id}`; div.innerHTML = `<div class="buoy-header"><span style="font-weight:bold;">浮球 #${id}</span></div><div class="buoy-stats" id="stats-${id}">0 人</div><div class="diver-list buoy-list" id="buoy-list-${id}" ondrop="drop(event)" ondragover="allowDrop(event)" data-buoy-id="${id}"></div>`; container.appendChild(div); }
         function createDiverCard(diver) {
-            const div = document.createElement('div'); div.className = `diver-card rank-${diver.rank}`; div.draggable = true; div.id = `diver-${diver.name}`; div.dataset.rank = diver.rank; div.dataset.name = diver.name; div.dataset.role = diver.role; div.dataset.manualLeader = "false"; div.ondragstart = drag;
+            const div = document.createElement('div'); div.className = `diver-card rank-${diver.rank}`; div.draggable = true; div.id = diver.name; div.dataset.name = diver.name; div.dataset.role = diver.role;
+            if(diver.isManualLeader) div.dataset.manualLeader = "true";
+            div.ondragstart = drag;
             div.innerHTML = `<div class="diver-info"><span class="leader-icon" onclick="toggleLeader(this, event)">★</span><strong>${diver.name}</strong><span style="font-size:0.75em; padding:2px 6px; border-radius:4px; background:rgba(0,0,0,0.1); font-weight:bold;">${diver.role}</span></div><span class="mobile-move" onclick="showMobileMenu(this)">移動</span>`;
             return div;
         }
