@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自由潛水分配 v14.0 (按鈕微調版)</title>
+    <title>自由潛水分配 v14.0</title>
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png">
+
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -91,7 +95,6 @@
             font-size: 16px;
             padding: 0;
             height: 38px;
-            /* 隱藏預設箭頭 */
             -moz-appearance: textfield;
         }
         .stepper input::-webkit-outer-spin-button,
@@ -121,7 +124,6 @@
         .stepper-btn:last-child { border-bottom: none; }
         .stepper-btn:hover { background: #e2e6ea; }
         .stepper-btn:active { background: #dae0e5; }
-        /* -------------------------------- */
 
         /* 浮球區域 */
         .buoy-container {
@@ -370,12 +372,12 @@
         };
 
         function loadDivers() {
-            const saved = localStorage.getItem('freediving_divers_v12'); 
+            const saved = localStorage.getItem('freediving_divers_v14'); // 更新 key
             divers = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultDivers));
         }
-        function saveDivers() { localStorage.setItem('freediving_divers_v12', JSON.stringify(divers)); }
+        function saveDivers() { localStorage.setItem('freediving_divers_v14', JSON.stringify(divers)); }
 
-        // --- v14 新增：數值微調功能 ---
+        // --- 數值微調功能 ---
         function stepValue(id, delta) {
             const input = document.getElementById(id);
             let val = parseInt(input.value) || 0;
@@ -385,7 +387,6 @@
             let newVal = val + delta;
             if (newVal >= min && newVal <= max) {
                 input.value = newVal;
-                // 手動觸發 change 事件以執行對應的邏輯 (adjustBuoyCount 或 updateAllStats)
                 input.onchange(); 
             }
         }
