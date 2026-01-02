@@ -38,22 +38,19 @@
             padding: 20px;
             color: #333;
             overscroll-behavior-y: contain;
-            /* 讓手機版底部留白，避免被 Home Bar 擋住 */
             padding-bottom: 40px;
         }
 
-        /* 🔥 主標題樣式更新 */
         h1 { 
             text-align: center; 
             color: #2c3e50; 
             margin-bottom: 20px; 
-            font-size: 2.2em; /*稍微加大*/
+            font-size: 2.2em;
             letter-spacing: 1px;
         }
         
-        /* 在標題下方加一個小小的版本號說明 */
         h1::after {
-            content: "v14.0 Offline";
+            content: "v15.0 Stable";
             display: block;
             font-size: 0.4em;
             color: #888;
@@ -62,7 +59,6 @@
             letter-spacing: 0;
         }
 
-        /* 通用按鈕樣式 */
         button {
             padding: 10px 14px;
             border: none;
@@ -83,7 +79,6 @@
         .btn-reset { background-color: #6c757d; color: white; }
         .btn-manage { background-color: #2c3e50; color: white; margin-right: 10px; }
 
-        /* 控制面板 */
         .controls {
             background: var(--card-bg);
             padding: 15px;
@@ -104,7 +99,6 @@
             font-size: 16px; background-color: #fff; cursor: pointer; height: 40px;
         }
 
-        /* Stepper */
         .stepper {
             display: flex;
             align-items: center;
@@ -147,10 +141,7 @@
             color: #555;
         }
         .stepper-btn:last-child { border-bottom: none; }
-        .stepper-btn:hover { background: #e2e6ea; }
-        .stepper-btn:active { background: #dae0e5; }
 
-        /* 浮球區域 */
         .buoy-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -170,7 +161,6 @@
         .buoy-stats.over-limit { color: #c62828; font-weight: bold; background: #ffcdd2; }
         .diver-list { padding: 10px; min-height: 100px; flex-grow: 1; }
 
-        /* 潛水員卡片 */
         .diver-card {
             padding: 12px 10px;
             margin-bottom: 8px; border-radius: 8px; border: 1px solid #ccc;
@@ -186,20 +176,16 @@
         .rank-2 { background: var(--low-color); border-color: var(--low-border); }
         .rank-1 { background: var(--newbie-color); border-color: var(--newbie-border); color: #666; } 
         
-        .diver-info { 
-            display: flex; align-items: center; gap: 8px; 
-            white-space: nowrap; 
-            overflow: hidden;
-        }
+        .diver-info { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; }
         
-        .leader-icon { cursor: pointer; font-size: 1.4em; color: #ccc; padding: 0 5px; }
-        .is-auto-leader .leader-icon { color: #f1c40f; }
-        .is-manual-leader .leader-icon { color: #ff5722; text-shadow: 0 0 2px rgba(0,0,0,0.2); }
+        /* 🔥 修復星星顯示邏輯，增加權重 */
+        .leader-icon { cursor: pointer; font-size: 1.4em; color: #ccc; padding: 0 5px; transition: color 0.2s; }
+        .is-auto-leader .leader-icon { color: #f1c40f !important; }
+        .is-manual-leader .leader-icon { color: #ff5722 !important; text-shadow: 0 0 2px rgba(0,0,0,0.2); }
 
         .mobile-move { display: none; font-size: 0.9em; padding: 5px 10px; background:rgba(0,123,255,0.1); border-radius:4px; color: #007bff; cursor: pointer; margin-left: auto; white-space: nowrap;}
         @media (max-width: 768px) { .mobile-move { display: block; } }
 
-        /* Modal */
         .modal { 
             display: none; position: fixed; z-index: 9999; left: 0; top: 0; 
             width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);
@@ -215,8 +201,6 @@
             color: #aaa; position: absolute; right: 15px; top: 10px;
             font-size: 36px; font-weight: bold; cursor: pointer; z-index: 10; padding: 5px;
         }
-        .close:hover { color: #000; }
-        
         .manage-section { flex-grow: 1; overflow-y: auto; border-bottom: 2px solid #eee; margin-bottom: 15px; padding-bottom: 10px;}
         .manage-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; border-bottom: 1px solid #eee; }
         .manage-item:nth-child(even) { background-color: #fafafa; }
@@ -224,28 +208,17 @@
         .batch-add textarea { width: 100%; height: 80px; margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #90caf9; box-sizing: border-box; font-family: monospace; }
         .single-add { display: flex; gap: 10px; flex-wrap: wrap; background: #f9f9f9; padding: 10px; border-radius: 6px; }
         .single-add input, .single-add select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; flex-grow: 1; min-width: 100px;}
-        
         textarea.result-box { width: 100%; height: 250px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: monospace; line-height: 1.5; resize: none; margin-bottom: 10px; box-sizing: border-box;}
-        
         .move-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; overflow-y: auto; max-height: 60vh; }
         .btn-move-option { padding: 15px; font-size: 16px; border: 2px solid var(--border); border-radius: 8px; background: #fff; color: #333; text-align: center; font-weight: bold; transition: all 0.2s; }
         .btn-move-option:active { background: #e0e0e0; transform: scale(0.98); }
         .btn-move-pool { grid-column: 1 / -1; background-color: #fff3e0; border-color: #ffb74d; color: #e65100; }
         .btn-move-buoy { background-color: #f8f9fa; }
-
         #unassigned-area {
-            display: block; 
-            background: #fff3e0; 
-            border: 2px dashed #ffb74d; 
-            margin-bottom: 20px;
-            padding: 15px; 
-            border-radius: 12px;
-            min-height: 80px; 
+            display: block; background: #fff3e0; border: 2px dashed #ffb74d; 
+            margin-bottom: 20px; padding: 15px; border-radius: 12px; min-height: 80px; 
         }
-        #unassigned-area .diver-list { 
-            display: flex; flex-wrap: wrap; gap: 10px; padding: 0; min-height: 60px; 
-        }
-
+        #unassigned-area .diver-list { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; min-height: 60px; }
     </style>
 </head>
 <body>
@@ -400,57 +373,67 @@
         }
         function saveDivers() { localStorage.setItem('freediving_divers_v14', JSON.stringify(divers)); }
 
-        // --- 數值微調功能 ---
         function stepValue(id, delta) {
             const input = document.getElementById(id);
             let val = parseInt(input.value) || 0;
             const min = parseInt(input.min) || 1;
             const max = parseInt(input.max) || 20;
-            
             let newVal = val + delta;
             if (newVal >= min && newVal <= max) {
                 input.value = newVal;
-                // 手動觸發 change 事件以執行對應的邏輯 (adjustBuoyCount 或 updateAllStats)
                 input.onchange(); 
             }
         }
 
-        // --- 分配核心 ---
+        // --- 核心邏輯修正 ---
         function autoAssign() {
             const pool = document.getElementById('pool');
             const buoys = document.querySelectorAll('.buoy-list');
             
+            // 先將所有卡片移回 Pool (但保留原本的手動球長設定)
             buoys.forEach(list => { while(list.firstChild) pool.appendChild(list.firstChild); });
             let allCards = Array.from(pool.children);
-            allCards.forEach(card => card.dataset.manualLeader = "false");
+            
+            // 注意：移除這行 v14 的代碼，保留使用者的手動設定
+            // allCards.forEach(card => card.dataset.manualLeader = "false"); 
 
             const logic = document.getElementById('assignLogic').value;
             const buoyCount = parseInt(document.getElementById('buoyCount').value);
             const maxCapacity = parseInt(document.getElementById('maxCapacity').value);
 
+            // 排序
             if (logic === 'random') {
                 for (let i = allCards.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [allCards[i], allCards[j]] = [allCards[j], allCards[i]];
                 }
             } else {
-                allCards.sort((a, b) => parseInt(b.dataset.rank) - parseInt(a.dataset.rank));
+                // rank 降序
+                allCards.sort((a, b) => {
+                    const rA = parseInt(a.dataset.rank) || 1;
+                    const rB = parseInt(b.dataset.rank) || 1;
+                    return rB - rA;
+                });
             }
+
+            // 重新填入 Pool (讓 DOM 順序跟隨排序)
             allCards.forEach(card => pool.appendChild(card));
 
             if (logic === 'group') {
-                let currentBuoyIndex = 1;
+                // 🔥 v15.0 修正：能力分組邏輯 (依序填滿)
+                // 邏輯：從高分的人開始，尋找「第一個有空位的浮球」塞進去
                 allCards.forEach(card => {
-                    let list = document.getElementById(`buoy-list-${currentBuoyIndex}`);
-                    while (list && list.children.length >= maxCapacity && currentBuoyIndex < buoyCount) {
-                        currentBuoyIndex++;
-                        list = document.getElementById(`buoy-list-${currentBuoyIndex}`);
+                    for (let i = 1; i <= buoyCount; i++) {
+                        let list = document.getElementById(`buoy-list-${i}`);
+                        if (list && list.children.length < maxCapacity) {
+                            list.appendChild(card);
+                            break; // 找到位置就停止，換下一張卡
+                        }
                     }
-                    if(list && list.children.length < maxCapacity) {
-                        list.appendChild(card);
-                    }
+                    // 如果所有球都滿了，該卡片會自動留在 pool，不需額外處理
                 });
             } else {
+                // 平均分配 (Round-Robin)
                 allCards.forEach((card, index) => {
                     let placed = false;
                     let startNode = (index % buoyCount) + 1;
@@ -468,7 +451,6 @@
             updateAllStats();
         }
 
-        // --- 其他功能 ---
         function openManager() { document.getElementById('managerModal').style.display = 'flex'; renderManageList(); }
         function openExport() { document.getElementById('exportModal').style.display = 'flex'; generateExportText(); }
         function openRestore() { document.getElementById('restoreModal').style.display = 'flex'; document.getElementById('restoreInput').value = ''; }
@@ -552,7 +534,7 @@
             for (let i = 1; i <= buoyCount; i++) {
                 const list = document.getElementById(`buoy-list-${i}`); if (!list) continue; const cards = Array.from(list.children); if (cards.length === 0) continue; hasContent = true; output += `【浮球 #${i}】(${cards.length}人)\n`;
                 const manualLeader = cards.find(c => c.dataset.manualLeader === "true"); let leaderCard = manualLeader;
-                if (!leaderCard) { const maxRank = Math.max(...cards.map(c => parseInt(c.dataset.rank))); leaderCard = cards.find(c => parseInt(c.dataset.rank) === maxRank); }
+                if (!leaderCard) { const maxRank = Math.max(...cards.map(c => parseInt(c.dataset.rank) || 1)); leaderCard = cards.find(c => parseInt(c.dataset.rank) === maxRank); }
                 cards.forEach(card => { const isLeader = (card === leaderCard); const prefix = isLeader ? "⭐ " : "   "; output += `${prefix}${card.dataset.name} (${card.dataset.role})\n`; }); output += "\n";
             }
             const pool = document.getElementById('pool'); if (pool.children.length > 0) { output += `---------------\n⚠️ 待分配區：\n`; Array.from(pool.children).forEach(card => output += `${card.dataset.name} (${card.dataset.role})\n`); }
@@ -579,7 +561,7 @@
         }
         function createBuoyHTML(id, container) { const div = document.createElement('div'); div.className = 'buoy'; div.id = `buoy-${id}`; div.innerHTML = `<div class="buoy-header"><span style="font-weight:bold;">浮球 #${id}</span></div><div class="buoy-stats" id="stats-${id}">0 人</div><div class="diver-list buoy-list" id="buoy-list-${id}" ondrop="drop(event)" ondragover="allowDrop(event)" data-buoy-id="${id}"></div>`; container.appendChild(div); }
         function createDiverCard(diver) {
-            const div = document.createElement('div'); div.className = `diver-card rank-${diver.rank}`; div.draggable = true; div.id = diver.name; div.dataset.name = diver.name; div.dataset.role = diver.role;
+            const div = document.createElement('div'); div.className = `diver-card rank-${diver.rank}`; div.draggable = true; div.id = `diver-${diver.name}`; div.dataset.rank = diver.rank; div.dataset.name = diver.name; div.dataset.role = diver.role;
             if(diver.isManualLeader) div.dataset.manualLeader = "true";
             div.ondragstart = drag;
             div.innerHTML = `<div class="diver-info"><span class="leader-icon" onclick="toggleLeader(this, event)">★</span><strong>${diver.name}</strong><span style="font-size:0.75em; padding:2px 6px; border-radius:4px; background:rgba(0,0,0,0.1); font-weight:bold;">${diver.role}</span></div><span class="mobile-move" onclick="showMobileMenu(this)">移動</span>`;
@@ -589,15 +571,45 @@
             event.stopPropagation(); const card = icon.closest('.diver-card'); const list = card.parentElement; if(list.id === 'pool') { alert("請先將人員移入浮球後再指定球長"); return; }
             const isMan = card.dataset.manualLeader === "true"; Array.from(list.children).forEach(c => c.dataset.manualLeader = "false"); if (!isMan) card.dataset.manualLeader = "true"; updateAllStats();
         }
+        
+        // 🔥 修復：Auto Leader 更新邏輯與防呆
         function updateAllStats() {
-            const count = parseInt(document.getElementById('buoyCount').value); const max = parseInt(document.getElementById('maxCapacity').value);
+            const count = parseInt(document.getElementById('buoyCount').value); 
+            const max = parseInt(document.getElementById('maxCapacity').value);
+            
             for (let i = 1; i <= count; i++) {
-                const list = document.getElementById(`buoy-list-${i}`); if (!list) continue; const cards = Array.from(list.children); const len = cards.length;
-                const st = document.getElementById(`stats-${i}`); st.textContent = `${len} / ${max} 人`; st.className = `buoy-stats ${len > max ? 'over-limit' : ''}`;
-                cards.forEach(c => { c.classList.remove('is-auto-leader'); c.classList.remove('is-manual-leader'); });
-                if (len > 0) { const man = cards.find(c => c.dataset.manualLeader === "true"); if (man) man.classList.add('is-manual-leader'); else { const maxR = Math.max(...cards.map(c => parseInt(c.dataset.rank))); const auto = cards.find(c => parseInt(c.dataset.rank) === maxR); if(auto) auto.classList.add('is-auto-leader'); } }
+                const list = document.getElementById(`buoy-list-${i}`); 
+                if (!list) continue; 
+                const cards = Array.from(list.children); 
+                const len = cards.length;
+                
+                const st = document.getElementById(`stats-${i}`); 
+                st.textContent = `${len} / ${max} 人`; 
+                st.className = `buoy-stats ${len > max ? 'over-limit' : ''}`;
+                
+                // 先清除所有狀態
+                cards.forEach(c => { 
+                    c.classList.remove('is-auto-leader'); 
+                    c.classList.remove('is-manual-leader'); 
+                });
+                
+                if (len > 0) { 
+                    // 1. 優先找手動指定的
+                    const man = cards.find(c => c.dataset.manualLeader === "true"); 
+                    if (man) {
+                        man.classList.add('is-manual-leader'); 
+                    } else { 
+                        // 2. 沒有手動，找 Rank 最高的
+                        const ranks = cards.map(c => parseInt(c.dataset.rank) || 1);
+                        const maxR = Math.max(...ranks); 
+                        // 找到第一個符合最高 Rank 的人
+                        const auto = cards.find(c => (parseInt(c.dataset.rank) || 1) === maxR); 
+                        if(auto) auto.classList.add('is-auto-leader'); 
+                    } 
+                }
             }
         }
+        
         function allowDrop(ev) { ev.preventDefault(); const b = ev.target.closest('.buoy'); if(b) b.classList.add('drag-over'); }
         document.addEventListener('dragleave', function(ev) { if (ev.target.classList && ev.target.classList.contains('buoy')) ev.target.classList.remove('drag-over'); });
         function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
