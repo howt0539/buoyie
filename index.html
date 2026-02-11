@@ -43,7 +43,7 @@
             font-size: 2.2em; letter-spacing: 1px;
         }
         h1::after {
-            content: "v15.2 Quick Edit"; display: block;
+            content: "v15.3 Fixes"; display: block;
             font-size: 0.4em; color: #888; margin-top: 5px; font-weight: normal; letter-spacing: 0;
         }
 
@@ -78,9 +78,20 @@
         .buoy-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding-bottom: 50px; }
         .buoy { background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; transition: all 0.2s; border: 2px solid transparent;}
         .buoy.drag-over { border-color: var(--primary); background-color: #f0f7ff; }
-        .buoy-header { background: #2c3e50; color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .buoy-stats { padding: 8px 12px; background: #ecf0f1; font-size: 0.9em; text-align: right; border-bottom: 1px solid var(--border); }
-        .buoy-stats.over-limit { color: #c62828; font-weight: bold; background: #ffcdd2; }
+        
+        /* 🔥 v15.3 修復：強制標題與人數在同一行，並對齊中間 */
+        .buoy-header { 
+            background: #2c3e50; color: white; padding: 12px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            flex-wrap: nowrap; /* 禁止換行 */
+        }
+        /* 人數統計改用 span 標籤樣式，不再獨立一行 */
+        .header-stats {
+            font-size: 0.9em; background: rgba(255,255,255,0.2); 
+            padding: 2px 8px; border-radius: 12px; white-space: nowrap;
+        }
+        .header-stats.over-limit { background: #c62828; font-weight: bold; }
+
         .diver-list { padding: 10px; min-height: 100px; flex-grow: 1; }
 
         .diver-card {
@@ -108,13 +119,12 @@
         .modal-content { background-color: #fefefe; padding: 20px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 12px; position: relative; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .close { color: #aaa; position: absolute; right: 15px; top: 10px; font-size: 36px; font-weight: bold; cursor: pointer; z-index: 10; padding: 5px; }
         
-        /* Manage List Improvements */
         .manage-section { flex-grow: 1; overflow-y: auto; border-bottom: 2px solid #eee; margin-bottom: 15px; padding-bottom: 10px;}
         .manage-item { display: flex; gap: 8px; align-items: center; padding: 10px 5px; border-bottom: 1px solid #eee; }
         .manage-item:nth-child(even) { background-color: #fafafa; }
         /* Quick Edit Inputs */
         .edit-name { flex-grow: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; min-width: 0; }
-        .edit-role { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 90px; }
+        .edit-role { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 105px; } /* Slightly wider for better text fit */
         
         .batch-add { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 15px;}
         .batch-add textarea { width: 100%; height: 80px; margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #90caf9; box-sizing: border-box; font-family: monospace; }
@@ -290,7 +300,6 @@
                 divers[index].rank = parseInt(rankVal);
             }
             saveDivers();
-            // Full refresh to update UI everywhere
             refreshAllUI();
         }
 
@@ -302,55 +311,25 @@
             }
         }
 
-        // Re-render everything to keep names in sync
         function refreshAllUI() {
             renderManageList();
-            
-            // Backup current placements
-            const placements = [];
-            document.querySelectorAll('.diver-card').forEach(card => {
-                const parentId = card.parentElement.id;
-                // Use dataset name to match old data, but index is safer if we had it. 
-                // Since we are refreshing, we just want to keep positions if possible.
-                // However, simpler is to just rebuild pool/buoys based on current 'divers' data 
-                // but that loses positions. 
-                // Better strategy: Just update text in place? No, ranks might change.
-                // Strategy: Re-render all cards into Pool, then Auto-assign? No, user loses manual edits.
-                
-                // For simplicity in V15.2: We will re-generate all cards into the Pool first, 
-                // OR we accept that changing a name in Manager puts them back in Pool (simplest logic).
-                // Let's try to map by index if possible, but cards don't have index.
-                // Okay, simplest robust way: Clear board, re-create cards in Pool. User re-assigns or Auto.
-            });
-            
-            // Clear board
             const pool = document.getElementById('pool');
             pool.innerHTML = '';
             document.querySelectorAll('.buoy-list').forEach(l => l.innerHTML = '');
-            
-            // Re-create all cards in Pool (safest to avoid ghosts)
-            // *User will need to click Auto Assign again, but data is correct.*
             divers.forEach(d => pool.appendChild(createDiverCard(d)));
-            
-            // Attempt to restore structure if needed, but for now reset to pool is safest on name edit.
-            // If user just edited, they are in Manager anyway.
             updateAllStats();
         }
 
-        // Render Manager List with Inputs
         function renderManageList() {
             const listDiv = document.getElementById('manageList'); 
             document.getElementById('countDisplay').innerText = divers.length; 
             listDiv.innerHTML = '';
             
-            // Map original index to preserve it for editing
             const mappedDivers = divers.map((d, i) => ({...d, originalIndex: i}));
             
-            // Sort for display, but keep original index for editing
             mappedDivers.sort((a,b) => b.rank - a.rank).forEach((p) => {
                 const item = document.createElement('div'); item.className = 'manage-item';
                 
-                // Name Input
                 const nameInput = document.createElement('input');
                 nameInput.type = 'text';
                 nameInput.className = 'edit-name';
@@ -362,27 +341,41 @@
                 roleSelect.className = 'edit-role';
                 const options = [
                     {val: "教練|5", label: "教練"},
-                    {val: "A4|4", label: "A4/W3"},
-                    {val: "A3|3", label: "A3/W2"},
-                    {val: "A2|2", label: "A2/W1"},
+                    {val: "A4|4", label: "A4 / W3"},
+                    {val: "A3|3", label: "A3 / W2"},
+                    {val: "A2|2", label: "A2 / W1"},
                     {val: "Newbie|1", label: "Newbie"}
                 ];
+                
                 options.forEach(opt => {
                     const op = document.createElement('option');
                     op.value = opt.val;
-                    op.text = opt.label;
-                    // Simple check for selected based on rank/role mapping
-                    if(p.role === opt.label || (p.role === "無證" && opt.label === "Newbie")) op.selected = true;
-                    // Fallback using rank if role text differs slightly
-                    else if (p.rank === parseInt(opt.val.split('|')[1]) && !op.selected) {
-                         // Loose match
-                         if(p.rank === 5 && opt.label==="教練") op.selected = true;
+                    
+                    // 顯示的文字是 "A4/W3"，但為了比對 p.role (可能只是 "A4" 或 "W3")，我們要模糊比對
+                    op.text = opt.label; 
+                    
+                    // 🔥 v15.3 修復：精準比對邏輯
+                    // 1. 如果角色名稱完全一樣 (e.g., "教練")
+                    if(p.role === opt.label) {
+                        op.selected = true;
                     }
+                    // 2. 如果是 Newbie / 無證 
+                    else if ((p.role === "Newbie" || p.role === "無證") && opt.label === "Newbie") {
+                        op.selected = true;
+                    }
+                    // 3. 如果是用 Rank 來對應 (e.g., p.role="A4", opt.val="A4|4")
+                    else {
+                        const optRank = parseInt(opt.val.split('|')[1]);
+                        if (p.rank === optRank) {
+                            op.selected = true;
+                        }
+                    }
+                    
                     roleSelect.appendChild(op);
                 });
+                
                 roleSelect.onchange = (e) => updateDiverAttr(p.originalIndex, 'role', e.target.value);
 
-                // Delete Button
                 const delBtn = document.createElement('button');
                 delBtn.className = 'btn-danger';
                 delBtn.style.padding = '6px 10px';
@@ -576,7 +569,17 @@
             else if (newCount < currentCount) { const pool = document.getElementById('pool'); for (let i = currentCount; i > newCount; i--) { const list = document.getElementById(`buoy-list-${i}`); while (list.children.length > 0) pool.appendChild(list.children[0]); document.getElementById(`buoy-${i}`).remove(); } }
             updateAllStats();
         }
-        function createBuoyHTML(id, container) { const div = document.createElement('div'); div.className = 'buoy'; div.id = `buoy-${id}`; div.innerHTML = `<div class="buoy-header"><span style="font-weight:bold;">浮球 #${id}</span></div><div class="buoy-stats" id="stats-${id}">0 人</div><div class="diver-list buoy-list" id="buoy-list-${id}" ondrop="drop(event)" ondragover="allowDrop(event)" data-buoy-id="${id}"></div>`; container.appendChild(div); }
+        // 🔥 v15.3 修復：HTML 結構微調，配合 CSS 讓標題與人數在同一排
+        function createBuoyHTML(id, container) { 
+            const div = document.createElement('div'); div.className = 'buoy'; div.id = `buoy-${id}`; 
+            div.innerHTML = `
+                <div class="buoy-header">
+                    <span style="font-weight:bold;">浮球 #${id}</span>
+                    <span class="header-stats" id="stats-${id}">0 人</span>
+                </div>
+                <div class="diver-list buoy-list" id="buoy-list-${id}" ondrop="drop(event)" ondragover="allowDrop(event)" data-buoy-id="${id}"></div>`; 
+            container.appendChild(div); 
+        }
         function createDiverCard(diver) {
             const div = document.createElement('div'); div.className = `diver-card rank-${diver.rank}`; div.draggable = true; div.id = `diver-${diver.name}`; div.dataset.rank = diver.rank; div.dataset.name = diver.name; div.dataset.role = diver.role;
             if(diver.isManualLeader) div.dataset.manualLeader = "true";
@@ -592,7 +595,8 @@
             const count = parseInt(document.getElementById('buoyCount').value); const max = parseInt(document.getElementById('maxCapacity').value);
             for (let i = 1; i <= count; i++) {
                 const list = document.getElementById(`buoy-list-${i}`); if (!list) continue; const cards = Array.from(list.children); const len = cards.length;
-                const st = document.getElementById(`stats-${i}`); st.textContent = `${len} / ${max} 人`; st.className = `buoy-stats ${len > max ? 'over-limit' : ''}`;
+                const st = document.getElementById(`stats-${i}`); st.textContent = `${len} / ${max} 人`; 
+                st.className = `header-stats ${len > max ? 'over-limit' : ''}`; // Class name change for new style
                 cards.forEach(c => { c.classList.remove('is-auto-leader'); c.classList.remove('is-manual-leader'); });
                 if (len > 0) { const man = cards.find(c => c.dataset.manualLeader === "true"); if (man) man.classList.add('is-manual-leader'); else { const maxR = Math.max(...cards.map(c => parseInt(c.dataset.rank) || 1)); const auto = cards.find(c => (parseInt(c.dataset.rank) || 1) === maxR); if(auto) auto.classList.add('is-auto-leader'); } }
             }
