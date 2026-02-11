@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title>Buoyie</title>
+    <title>Buoyie - 自由潛水分配</title>
     
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="icon" type="image/png" href="apple-touch-icon.png">
@@ -50,7 +50,7 @@
         }
         
         h1::after {
-            content: "v15.0 Stable";
+            content: "v15.1 Smart Import";
             display: block;
             font-size: 0.4em;
             color: #888;
@@ -178,7 +178,6 @@
         
         .diver-info { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; }
         
-        /* 🔥 修復星星顯示邏輯，增加權重 */
         .leader-icon { cursor: pointer; font-size: 1.4em; color: #ccc; padding: 0 5px; transition: color 0.2s; }
         .is-auto-leader .leader-icon { color: #f1c40f !important; }
         .is-manual-leader .leader-icon { color: #ff5722 !important; text-shadow: 0 0 2px rgba(0,0,0,0.2); }
@@ -286,7 +285,7 @@
             <div class="input-section">
                 <div class="batch-add">
                     <span style="font-weight:bold; color:#1565c0; display:block; margin-bottom:5px;">📝 批量匯入</span>
-                    <textarea id="batchInput" placeholder="教練 王小明&#10;W3 李大華&#10;Newbie 張新手..."></textarea>
+                    <textarea id="batchInput" placeholder="直接貼上 LINE 名單..."></textarea>
                     <button class="btn-info" type="button" onclick="batchImport()" style="width:100%">解析並匯入</button>
                 </div>
                 <div class="single-add">
@@ -385,55 +384,41 @@
             }
         }
 
-        // --- 核心邏輯修正 ---
         function autoAssign() {
             const pool = document.getElementById('pool');
             const buoys = document.querySelectorAll('.buoy-list');
-            
-            // 先將所有卡片移回 Pool (但保留原本的手動球長設定)
             buoys.forEach(list => { while(list.firstChild) pool.appendChild(list.firstChild); });
             let allCards = Array.from(pool.children);
-            
-            // 注意：移除這行 v14 的代碼，保留使用者的手動設定
-            // allCards.forEach(card => card.dataset.manualLeader = "false"); 
 
             const logic = document.getElementById('assignLogic').value;
             const buoyCount = parseInt(document.getElementById('buoyCount').value);
             const maxCapacity = parseInt(document.getElementById('maxCapacity').value);
 
-            // 排序
             if (logic === 'random') {
                 for (let i = allCards.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [allCards[i], allCards[j]] = [allCards[j], allCards[i]];
                 }
             } else {
-                // rank 降序
                 allCards.sort((a, b) => {
                     const rA = parseInt(a.dataset.rank) || 1;
                     const rB = parseInt(b.dataset.rank) || 1;
                     return rB - rA;
                 });
             }
-
-            // 重新填入 Pool (讓 DOM 順序跟隨排序)
             allCards.forEach(card => pool.appendChild(card));
 
             if (logic === 'group') {
-                // 🔥 v15.0 修正：能力分組邏輯 (依序填滿)
-                // 邏輯：從高分的人開始，尋找「第一個有空位的浮球」塞進去
                 allCards.forEach(card => {
                     for (let i = 1; i <= buoyCount; i++) {
                         let list = document.getElementById(`buoy-list-${i}`);
                         if (list && list.children.length < maxCapacity) {
                             list.appendChild(card);
-                            break; // 找到位置就停止，換下一張卡
+                            break;
                         }
                     }
-                    // 如果所有球都滿了，該卡片會自動留在 pool，不需額外處理
                 });
             } else {
-                // 平均分配 (Round-Robin)
                 allCards.forEach((card, index) => {
                     let placed = false;
                     let startNode = (index % buoyCount) + 1;
@@ -513,17 +498,71 @@
         }
         function executeMove(targetId) { const card = document.getElementById(currentMovingCardId); const target = document.getElementById(targetId); if(card && target) { target.appendChild(card); updateAllStats(); } closeModal('moveModal'); }
 
+        // 🔥🔥🔥 v15.1 智慧名單匯入核心邏輯 🔥🔥🔥
         function batchImport() {
-            const rawText = document.getElementById('batchInput').value.trim(); if (!rawText) return;
-            const regex = /(教練|W[1-3]|A[1-4]|Newbie|無證)\s+([^\s]+)/gi; let processText = rawText.replace(/[:：]/g, ' '); let match; let addedCount = 0; const pool = document.getElementById('pool');
-            while ((match = regex.exec(processText)) !== null) {
-                let roleRaw = match[1]; const nameRaw = match[2].trim(); let rank = 1; let role = roleRaw;
-                if (roleRaw.toLowerCase() === 'newbie' || roleRaw === '無證') { role = 'Newbie'; rank = 1; } 
-                else { role = roleRaw.toUpperCase(); if (role.includes('教練')) rank = 5; else if (role === 'A4' || role === 'W3') rank = 4; else if (role === 'A3' || role === 'W2') rank = 3; else if (role === 'A2' || role === 'W1') rank = 2; }
-                if (!divers.some(d => d.name === nameRaw)) { const newDiver = { name: nameRaw, role: role, rank: rank }; divers.push(newDiver); pool.appendChild(createDiverCard(newDiver)); addedCount++; }
-            }
-            saveDivers(); renderManageList(); updateAllStats(); document.getElementById('batchInput').value = ''; if(addedCount > 0) alert(`已匯入 ${addedCount} 人`);
+            const rawText = document.getElementById('batchInput').value.trim(); 
+            if (!rawText) return;
+
+            // 1. 將輸入文字依換行切割
+            const lines = rawText.split(/\r?\n/);
+            const pool = document.getElementById('pool');
+            let addedCount = 0;
+
+            // 2. 逐行解析
+            lines.forEach(line => {
+                // 清洗資料：移除 LINE 通話時間、括號、多餘空格
+                // 例如: "佩璇（0：）" -> "佩璇"
+                let cleanLine = line.replace(/[（\(].*?[）\)]/g, '').trim(); 
+                
+                // 如果整行都是數字或標點，視為無效行
+                if (!cleanLine || /^[\d\s\.\-,]+$/.test(cleanLine)) return;
+
+                // 3. 判斷是否有「等級關鍵字」
+                // 這是為了保留「手動輸入等級」的功能 (例如: "教練 小明")
+                const roleRegex = /(教練|W[1-3]|A[1-4]|Newbie|無證)/i;
+                const match = cleanLine.match(roleRegex);
+
+                let name = cleanLine;
+                let role = "Newbie"; // 🔥 預設等級：Newbie
+                let rank = 1;
+
+                if (match) {
+                    // 如果這行有寫等級 (例如 "A2 小明")
+                    let roleRaw = match[0];
+                    // 把名字裡面的等級字眼拿掉，剩下的就是名字
+                    name = cleanLine.replace(roleRaw, '').trim();
+                    
+                    // 解析等級權重
+                    if (roleRaw.toLowerCase() === 'newbie' || roleRaw === '無證') { role = 'Newbie'; rank = 1; } 
+                    else { 
+                        role = roleRaw.toUpperCase(); 
+                        if (role.includes('教練')) rank = 5; 
+                        else if (role === 'A4' || role === 'W3') rank = 4; 
+                        else if (role === 'A3' || role === 'W2') rank = 3; 
+                        else if (role === 'A2' || role === 'W1') rank = 2; 
+                    }
+                } else {
+                    // 如果沒有寫等級 -> 就是純名單模式
+                    // 名字就是 cleanLine，等級維持預設的 Newbie
+                }
+
+                // 4. 防止重複添加與空名
+                if (name && !divers.some(d => d.name === name)) { 
+                    const newDiver = { name: name, role: role, rank: rank }; 
+                    divers.push(newDiver); 
+                    pool.appendChild(createDiverCard(newDiver)); 
+                    addedCount++; 
+                }
+            });
+
+            saveDivers(); 
+            renderManageList(); 
+            updateAllStats(); 
+            document.getElementById('batchInput').value = ''; 
+            if(addedCount > 0) alert(`已匯入 ${addedCount} 人`);
+            else alert("沒有匯入任何新人員 (可能名單已存在或格式空白)");
         }
+
         function addNewPerson() {
             const name = document.getElementById('newName').value.trim(); if(!name || divers.some(d => d.name === name)) { alert("請輸入有效且不重複的姓名"); return; }
             const [roleName, rankVal] = document.getElementById('newRole').value.split('|'); const newDiver = { name: name, role: roleName, rank: parseInt(rankVal) };
@@ -571,45 +610,15 @@
             event.stopPropagation(); const card = icon.closest('.diver-card'); const list = card.parentElement; if(list.id === 'pool') { alert("請先將人員移入浮球後再指定球長"); return; }
             const isMan = card.dataset.manualLeader === "true"; Array.from(list.children).forEach(c => c.dataset.manualLeader = "false"); if (!isMan) card.dataset.manualLeader = "true"; updateAllStats();
         }
-        
-        // 🔥 修復：Auto Leader 更新邏輯與防呆
         function updateAllStats() {
-            const count = parseInt(document.getElementById('buoyCount').value); 
-            const max = parseInt(document.getElementById('maxCapacity').value);
-            
+            const count = parseInt(document.getElementById('buoyCount').value); const max = parseInt(document.getElementById('maxCapacity').value);
             for (let i = 1; i <= count; i++) {
-                const list = document.getElementById(`buoy-list-${i}`); 
-                if (!list) continue; 
-                const cards = Array.from(list.children); 
-                const len = cards.length;
-                
-                const st = document.getElementById(`stats-${i}`); 
-                st.textContent = `${len} / ${max} 人`; 
-                st.className = `buoy-stats ${len > max ? 'over-limit' : ''}`;
-                
-                // 先清除所有狀態
-                cards.forEach(c => { 
-                    c.classList.remove('is-auto-leader'); 
-                    c.classList.remove('is-manual-leader'); 
-                });
-                
-                if (len > 0) { 
-                    // 1. 優先找手動指定的
-                    const man = cards.find(c => c.dataset.manualLeader === "true"); 
-                    if (man) {
-                        man.classList.add('is-manual-leader'); 
-                    } else { 
-                        // 2. 沒有手動，找 Rank 最高的
-                        const ranks = cards.map(c => parseInt(c.dataset.rank) || 1);
-                        const maxR = Math.max(...ranks); 
-                        // 找到第一個符合最高 Rank 的人
-                        const auto = cards.find(c => (parseInt(c.dataset.rank) || 1) === maxR); 
-                        if(auto) auto.classList.add('is-auto-leader'); 
-                    } 
-                }
+                const list = document.getElementById(`buoy-list-${i}`); if (!list) continue; const cards = Array.from(list.children); const len = cards.length;
+                const st = document.getElementById(`stats-${i}`); st.textContent = `${len} / ${max} 人`; st.className = `buoy-stats ${len > max ? 'over-limit' : ''}`;
+                cards.forEach(c => { c.classList.remove('is-auto-leader'); c.classList.remove('is-manual-leader'); });
+                if (len > 0) { const man = cards.find(c => c.dataset.manualLeader === "true"); if (man) man.classList.add('is-manual-leader'); else { const maxR = Math.max(...cards.map(c => parseInt(c.dataset.rank) || 1)); const auto = cards.find(c => (parseInt(c.dataset.rank) || 1) === maxR); if(auto) auto.classList.add('is-auto-leader'); } }
             }
         }
-        
         function allowDrop(ev) { ev.preventDefault(); const b = ev.target.closest('.buoy'); if(b) b.classList.add('drag-over'); }
         document.addEventListener('dragleave', function(ev) { if (ev.target.classList && ev.target.classList.contains('buoy')) ev.target.classList.remove('drag-over'); });
         function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
